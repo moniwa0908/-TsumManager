@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager Ver.7</title>
+  <title>TsumManager Ver.8</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager Ver.7</p>
+      <p>TsumManager Ver.8</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -45,6 +45,13 @@
         <button data-home-filter="unowned" class="quick-card"><span>🔒</span><b>未所持</b><small id="unownedCount">0体</small></button>
       </div>
 
+
+
+      <article class="panel">
+        <div class="section-title"><h2>おすすめ育成候補</h2><button id="refreshRecommendButton">再計算</button></div>
+        <p class="helper">残り数が少なく、未スキルマのツムを優先表示します。</p>
+        <div id="recommendList" class="mini-list"></div>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>最近使ったツム</h2><button id="clearRecentButton">履歴削除</button></div>
@@ -83,6 +90,7 @@
         <div>
           <button id="incrementMode">＋1</button>
           <button id="layoutMode">コンパクト</button>
+          <button id="galleryMode">ギャラリー</button>
         </div>
       </div>
       <div id="tsumList" class="tsum-list"></div>
@@ -169,6 +177,14 @@
         <button id="openImageManagerButton">登録画像を管理</button>
       </article>
 
+
+
+      <article class="panel settings-panel">
+        <h2>クイック所持数入力</h2>
+        <p class="helper">ツム名と所持数を1行ずつ入力します。例：エルサ,12</p>
+        <textarea id="quickOwnedText" placeholder="エルサ,12&#10;野獣,30"></textarea>
+        <button id="applyQuickOwnedButton">まとめて反映</button>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>データ診断</h2><button id="runHealthCheckButton">診断する</button></div>

@@ -83,3 +83,42 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
   .detail-hero{grid-template-columns:68px 1fr}
   .detail-avatar{width:68px;height:68px;border-radius:18px}
 }
+
+.tsum-list.gallery{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.tsum-list.gallery .tsum-card{
+  display:block;
+  padding:10px;
+  text-align:center;
+}
+.tsum-list.gallery .avatar{
+  width:100%;
+  aspect-ratio:1;
+  height:auto;
+  border-radius:18px;
+  font-size:34px;
+  margin-bottom:8px;
+}
+.tsum-list.gallery .title-row{
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.tsum-list.gallery .title-row strong{
+  width:100%;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tsum-list.gallery .star{position:absolute;transform:translate(-2px,-4px)}
+.tsum-list.gallery .more{display:none}
+.tsum-list.gallery .meta{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tsum-list.gallery .counter{justify-content:center;margin-top:8px}
+.tsum-list.gallery .counter button{width:34px;height:34px}
+.tsum-list.gallery .counter b{min-width:50px}
+.recommend-badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:999px;background:#fff7ed;color:#c2410c;font-weight:800}
+@media(max-width:560px){
+  .tsum-list.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
