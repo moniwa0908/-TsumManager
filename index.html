@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager Ver.8</title>
+  <title>TsumManager Ver.9</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager Ver.8</p>
+      <p>TsumManager Ver.9</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -83,6 +83,7 @@
         </div>
         <div id="categoryChips" class="chips"></div>
         <div id="statusChips" class="chips secondary"></div>
+        <div id="tagChips" class="chips tertiary"></div>
       </article>
 
       <div class="list-toolbar">
@@ -133,6 +134,17 @@
     </section>
 
     <section id="trainingView" class="view" hidden>
+
+      <article class="panel">
+        <h2>スキルチケット配分シミュレーター</h2>
+        <p class="helper">所持しているスキルチケット枚数を入力すると、少ない枚数でスキルマになる候補を提案します。実データは変更しません。</p>
+        <div class="simulator-controls">
+          <input id="simTicketCount" type="number" min="0" max="999" value="10">
+          <button id="runSimulatorButton" class="primary-button">計算する</button>
+        </div>
+        <div id="simulatorResult" class="simulator-result">枚数を入力して計算してください。</div>
+      </article>
+
       <article class="panel">
         <div class="section-title"><h2>育成予定</h2><button id="trainingHelpButton">使い方</button></div>
         <p class="helper">ツム編集画面で「最優先・優先・あとで」を設定できます。</p>
@@ -148,6 +160,10 @@
       <article class="panel">
         <h2>育成状況</h2>
         <div id="statusStats" class="stats-grid"></div>
+      </article>
+      <article class="panel">
+        <h2>タグ別コレクション率</h2>
+        <div id="tagStats"></div>
       </article>
       <article class="panel">
         <h2>必要コイン内訳</h2>
@@ -235,6 +251,9 @@
     <label>ツム画像<input id="editImageInput" type="file" accept="image/*"></label>
     <div id="imagePreview" class="image-preview"></div>
     <button type="button" id="removeImageButton" class="secondary-button">画像を削除</button>
+    <label>タグ（カンマ区切り）
+      <input id="editTags" placeholder="例：プリンセス,スターウォーズ">
+    </label>
     <label>メモ<textarea id="editMemo"></textarea></label>
     <button type="button" id="openDetailFromEditButton" class="secondary-button">詳細画面を開く</button>
     <div class="dialog-actions">

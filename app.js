@@ -1,13 +1,14 @@
 
-const KEYS=["tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV8", HISTORY_KEY="tsumManagerHistoryV8", RECENT_KEY="tsumManagerRecentV8";
+const KEYS=["tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV9", HISTORY_KEY="tsumManagerHistoryV9", RECENT_KEY="tsumManagerRecentV9";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
   id:t.id||crypto.randomUUID(),name:String(t.name||"名称未設定"),category:String(t.category||"未分類"),
   required:Math.max(1,Number(t.required||t.maxCopies||36)),owned:Math.max(0,Number(t.owned||0)),
   releaseYear:Number(t.releaseYear||t.year||0),favorite:!!t.favorite,image:String(t.image||""),
-  memo:String(t.memo||t.note||""),priority:Number(t.priority||0)
+  memo:String(t.memo||t.note||""),priority:Number(t.priority||0),
+  tags:Array.isArray(t.tags)?t.tags.map(x=>String(x).trim()).filter(Boolean):String(t.tags||"").split(",").map(x=>x.trim()).filter(Boolean)
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 function mergeMaster(existing){
@@ -27,7 +28,7 @@ function loadData(){
 let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
 let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
-let activeView="home",category="すべて",status="all",increment=1;
+let activeView="home",category="すべて",status="all",activeTag="すべて",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
@@ -81,6 +82,7 @@ function cardHtml(t){
         <button class="more" data-action="edit" data-id="${t.id}">•••</button>
       </div>
       <div class="meta">${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)} ・ ${pct(t)}%</div>
+      ${t.tags.length?`<div class="tag-list">${t.tags.slice(0,3).map(tag=>`<span class="tag-pill">${esc(tag)}</span>`).join("")}</div>`:""}
       <div class="mini-progress"><i style="width:${pct(t)}%"></i></div>
     </div>
     <div class="counter">
@@ -142,9 +144,12 @@ function renderList(){
   const statuses=[["all","すべて"],["unowned","未所持"],["owned","所持済み"],["max","スキルマ"],["near","目前"],["favorite","★お気に入り"],["priority","育成予定"],["noimage","画像なし"]];
   $("#statusChips").innerHTML=statuses.map(([k,v])=>`<button data-status="${k}" class="${k===status?"active":""}">${v}</button>`).join("");
   $("#statusChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{status=b.dataset.status;renderList()});
+  const tags=["すべて",...new Set(tsums.flatMap(t=>t.tags))].sort((a,b)=>a==="すべて"?-1:b==="すべて"?1:a.localeCompare(b,"ja"));
+  $("#tagChips").innerHTML=tags.map(tag=>`<button data-tag="${esc(tag)}" class="${tag===activeTag?"active":""}">${esc(tag)}</button>`).join("");
+  $("#tagChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{activeTag=b.dataset.tag;renderList()});
   let rows=tsums.filter(t=>{
     const matchStatus=status==="all"||(status==="unowned"&&t.owned===0)||(status==="owned"&&t.owned>0&&remain(t)>0)||(status==="max"&&remain(t)===0)||(status==="near"&&remain(t)>0&&remain(t)<=5)||(status==="favorite"&&t.favorite)||(status==="priority"&&t.priority>0)||(status==="noimage"&&!t.image);
-    return (category==="すべて"||t.category===category)&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q));
+    return (category==="すべて"||t.category===category)&&(activeTag==="すべて"||t.tags.includes(activeTag))&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
   });
   rows.sort((a,b)=>{
     if(sort==="remain")return remain(a)-remain(b)||a.name.localeCompare(b.name,"ja");
@@ -162,6 +167,28 @@ function renderList(){
   $("#layoutMode").textContent=compact?"標準表示":"コンパクト";
   $("#galleryMode").textContent=gallery?"カード表示":"ギャラリー";
 }
+
+function runSkillSimulator(){
+  let tickets=Math.max(0,Number($("#simTicketCount").value)||0);
+  const candidates=tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)||a.name.localeCompare(b.name,"ja"));
+  const selected=[];
+  for(const t of candidates){
+    const need=remain(t);
+    if(need<=tickets){
+      selected.push({t,need});
+      tickets-=need;
+    }
+  }
+  const result=$("#simulatorResult");
+  if(!selected.length){
+    const nearest=candidates.slice(0,5);
+    result.innerHTML=nearest.length?`この枚数でスキルマにできるツムはありません。<br><br>最も近い候補：<br>${nearest.map(t=>`${esc(t.name)}：あと${remain(t)}枚`).join("<br>")}`:"育成中のツムがありません。";
+    return;
+  }
+  result.innerHTML=`スキルマにできる候補：${selected.length}体<br>使用予定：${selected.reduce((s,x)=>s+x.need,0)}枚／残り：${tickets}枚<br><br>${selected.map((x,i)=>`<div class="sim-row"><span>${i+1}. ${esc(x.t.name)}</span><b>${x.need}枚</b></div>`).join("")}`;
+}
+$("#runSimulatorButton").onclick=runSkillSimulator;
+
 function renderTraining(){
   const rows=tsums.filter(t=>t.priority>0&&remain(t)>0).sort((a,b)=>a.priority-b.priority||remain(a)-remain(b));
   $("#trainingList").innerHTML=rows.map(cardHtml).join("")||`<div class="helper">育成予定はまだ登録されていません。</div>`;
@@ -175,6 +202,13 @@ function renderStats(){
   }).join("");
   const unowned=tsums.filter(t=>t.owned===0).length,growing=tsums.filter(t=>t.owned>0&&remain(t)>0).length,maxed=tsums.filter(t=>remain(t)===0).length;
   $("#statusStats").innerHTML=`<div><b>${unowned}</b><span>未所持</span></div><div><b>${growing}</b><span>育成中</span></div><div><b>${maxed}</b><span>スキルマ</span></div>`;
+  const tags=[...new Set(tsums.flatMap(t=>t.tags))].sort((a,b)=>a.localeCompare(b,"ja"));
+  $("#tagStats").innerHTML=tags.length?tags.map(tag=>{
+    const rows=tsums.filter(t=>t.tags.includes(tag));
+    const owned=rows.filter(t=>t.owned>0).length;
+    const p=rows.length?Math.round(owned/rows.length*100):0;
+    return `<div class="stat-row"><div><span>${esc(tag)}（${owned}/${rows.length}体）</span><b>${p}%</b></div><div class="stat-progress"><i style="width:${p}%"></i></div></div>`;
+  }).join(""):`<div class="helper">タグを登録すると、ここにコレクション率が表示されます。</div>`;
   $("#coinStats").innerHTML=cats.map(c=>{const r=tsums.filter(t=>t.category===c).reduce((s,t)=>s+remain(t),0);return `<div class="stat-row"><div><span>${esc(c)}</span><b>${(r*30000).toLocaleString("ja-JP")}コイン</b></div></div>`}).join("");
 }
 function renderBox(){
@@ -193,7 +227,7 @@ function openEdit(t=null){
   $("#dialogTitle").textContent=t?"ツムを編集":"ツムを追加";$("#editId").value=t?.id||"";
   $("#editName").value=t?.name||"";$("#editCategory").value=t?.category||"プレミアム";
   $("#editRequired").value=t?.required||36;$("#editOwned").value=t?.owned||0;
-  $("#editPriority").value=String(t?.priority||0);$("#editMemo").value=t?.memo||"";
+  $("#editPriority").value=String(t?.priority||0);$("#editTags").value=(t?.tags||[]).join(",");$("#editMemo").value=t?.memo||"";
   editingImage=t?.image||"";renderImagePreview();$("#deleteButton").style.display=t?"":"none";$("#editDialog").showModal();
 }
 function renderImagePreview(){$("#imagePreview").innerHTML=editingImage?`<img src="${editingImage}" alt="">`:""}
@@ -218,7 +252,7 @@ $("#editImageInput").onchange=e=>{
   reader.readAsDataURL(f);
 };
 $("#editForm").onsubmit=e=>{
-  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,priority:$("#editPriority").value,image:editingImage,memo:$("#editMemo").value});
+  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,memo:$("#editMemo").value});
   if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
   save();$("#editDialog").close();renderAll();toast("保存しました");
 };
@@ -344,7 +378,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:8,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:9,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

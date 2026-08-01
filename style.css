@@ -122,3 +122,13 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 @media(max-width:560px){
   .tsum-list.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+.chips.tertiary button{font-size:12px;border-style:dashed}
+.tag-list{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.tag-pill{display:inline-block;padding:2px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:800}
+.simulator-controls{display:grid;grid-template-columns:120px 1fr;gap:8px}
+.simulator-result{margin-top:10px;padding:12px;border-radius:14px;background:var(--bg);font-size:13px;line-height:1.7}
+.sim-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.sim-row:last-child{border-bottom:0}
+.sim-row b{color:var(--accent)}
+@media(max-width:560px){.simulator-controls{grid-template-columns:100px 1fr}}
