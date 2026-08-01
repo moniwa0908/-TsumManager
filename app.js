@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV52", HISTORY_KEY="tsumManagerHistoryV52", RECENT_KEY="tsumManagerRecentV52", PLAN_KEY="tsumManagerPlansV52", TODAY_KEY="tsumManagerTodayV52", UNDO_KEY="tsumManagerUndoV52", GOAL_KEY="tsumManagerGoalsV52", TICKET_STOCK_KEY="tsumManagerTicketStockV52", SNAPSHOT_KEY="tsumManagerSnapshotsV52", TASK_KEY="tsumManagerTasksV52", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV52";
+const KEYS=["tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV521", HISTORY_KEY="tsumManagerHistoryV521", RECENT_KEY="tsumManagerRecentV521", PLAN_KEY="tsumManagerPlansV521", TODAY_KEY="tsumManagerTodayV521", UNDO_KEY="tsumManagerUndoV521", GOAL_KEY="tsumManagerGoalsV521", TICKET_STOCK_KEY="tsumManagerTicketStockV521", SNAPSHOT_KEY="tsumManagerSnapshotsV521", TASK_KEY="tsumManagerTasksV521", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV521";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -16,9 +16,25 @@ const norm=t=>({
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 function mergeMaster(existing){
-  const map=new Map(existing.map(x=>[x.name,norm(x)]));
-  for(const m of master())if(!map.has(m.name))map.set(m.name,m);
-  return [...map.values()];
+  const oldMap=new Map(existing.map(x=>[x.name,norm(x)]));
+  const merged=[];
+  for(const m of master()){
+    const old=oldMap.get(m.name);
+    if(old){
+      merged.push(norm({
+        ...m,
+        ...old,
+        releaseDate:old.releaseDate||m.releaseDate,
+        releaseYear:old.releaseYear||m.releaseYear,
+        releaseOrder:old.releaseOrder||m.releaseOrder
+      }));
+      oldMap.delete(m.name);
+    }else{
+      merged.push(m);
+    }
+  }
+  for(const old of oldMap.values())merged.push(old);
+  return merged;
 }
 function loadData(){
   for(const key of KEYS){
@@ -41,7 +57,7 @@ let undoHistory=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_HISTORY_KE
 let viewerIndex=0;
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
-let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,increment=1;
+let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
@@ -409,9 +425,6 @@ function renderCollection(){
   const cats=["すべて",...new Set(tsums.map(t=>t.category))];
   $("#collectionCategoryChips").innerHTML=cats.map(c=>`<button data-collection-category="${esc(c)}" class="${c===collectionCategory?"active":""}">${esc(c)}</button>`).join("");
   $("#collectionCategoryChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{collectionCategory=b.dataset.collectionCategory;collectionLimit=60;renderCollection()});
-  const releaseYears=[...new Set(tsums.filter(t=>t.releaseDate).map(t=>t.releaseDate.slice(0,4)))].sort();
-  $("#releaseYearFilter").innerHTML=`<option value="all">登場年：すべて</option>`+releaseYears.map(y=>`<option value="${y}" ${releaseYearFilter===y?"selected":""}>${y}年</option>`).join("");
-  $("#releaseMonthFilter").innerHTML=`<option value="all">登場月：すべて</option>`+Array.from({length:12},(_,i)=>String(i+1).padStart(2,"0")).map(m=>`<option value="${m}" ${releaseMonthFilter===m?"selected":""}>${Number(m)}月</option>`).join("");
   let rows=tsums.filter(t=>{
     const matchesFilter=filter==="all"||(filter==="owned"&&t.owned>0)||(filter==="unowned"&&t.owned===0)||(filter==="max"&&remain(t)===0)||(filter==="image"&&t.image)||(filter==="favorite"&&t.favorite);
     return matchesFilter&&(collectionCategory==="すべて"||t.category===collectionCategory)&&(t.name.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
@@ -803,7 +816,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.2.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
