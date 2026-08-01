@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV30", HISTORY_KEY="tsumManagerHistoryV30", RECENT_KEY="tsumManagerRecentV30", PLAN_KEY="tsumManagerPlansV30", TODAY_KEY="tsumManagerTodayV30", UNDO_KEY="tsumManagerUndoV30", GOAL_KEY="tsumManagerGoalsV30", TICKET_STOCK_KEY="tsumManagerTicketStockV30", SNAPSHOT_KEY="tsumManagerSnapshotsV30";
+const KEYS=["tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV40", HISTORY_KEY="tsumManagerHistoryV40", RECENT_KEY="tsumManagerRecentV40", PLAN_KEY="tsumManagerPlansV40", TODAY_KEY="tsumManagerTodayV40", UNDO_KEY="tsumManagerUndoV40", GOAL_KEY="tsumManagerGoalsV40", TICKET_STOCK_KEY="tsumManagerTicketStockV40", SNAPSHOT_KEY="tsumManagerSnapshotsV40";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -8,7 +8,11 @@ const norm=t=>({
   required:Math.max(1,Number(t.required||t.maxCopies||36)),owned:Math.max(0,Number(t.owned||0)),
   releaseYear:Number(t.releaseYear||t.year||0),favorite:!!t.favorite,image:String(t.image||""),
   memo:String(t.memo||t.note||""),priority:Number(t.priority||0),
-  tags:Array.isArray(t.tags)?t.tags.map(x=>String(x).trim()).filter(Boolean):String(t.tags||"").split(",").map(x=>x.trim()).filter(Boolean)
+  tags:Array.isArray(t.tags)?t.tags.map(x=>String(x).trim()).filter(Boolean):String(t.tags||"").split(",").map(x=>x.trim()).filter(Boolean),
+  coinRating:Math.max(0,Math.min(5,Number(t.coinRating||0))),
+  scoreRating:Math.max(0,Math.min(5,Number(t.scoreRating||0))),
+  easeRating:Math.max(0,Math.min(5,Number(t.easeRating||0))),
+  missionTags:Array.isArray(t.missionTags)?t.missionTags.map(x=>String(x).trim()).filter(Boolean):String(t.missionTags||"").split(",").map(x=>x.trim()).filter(Boolean)
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 function mergeMaster(existing){
@@ -34,7 +38,7 @@ let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
 let snapshots=(()=>{try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"[]")}catch(e){return[]}})();
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
-let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,increment=1;
+let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
@@ -91,6 +95,7 @@ function showView(view){
   if(view==="box")renderBox();
   if(view==="training")renderTraining();
   if(view==="stats")renderStats();
+  if(view==="strategy")renderStrategy();
   if(view==="goals")renderGoals();
   if(view==="planner")renderPlanner();
   if(view==="settings")renderSettings();
@@ -110,6 +115,7 @@ function cardHtml(t){
       </div>
       <div class="meta">${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)} ・ ${pct(t)}%</div>
       ${t.tags.length?`<div class="tag-list">${t.tags.slice(0,3).map(tag=>`<span class="tag-pill">${esc(tag)}</span>`).join("")}</div>`:""}
+      ${(t.coinRating||t.scoreRating||t.easeRating)?`<div class="rating-stars">C${"★".repeat(t.coinRating)} S${"★".repeat(t.scoreRating)} E${"★".repeat(t.easeRating)}</div>`:""}
       <div class="mini-progress"><i style="width:${pct(t)}%"></i></div>
     </div>
     <div class="counter">
@@ -190,6 +196,33 @@ function miniHtml(t,recommend=false){
 }
 
 
+
+
+function ratingValue(t,type){
+  if(type==="coin")return t.coinRating;
+  if(type==="score")return t.scoreRating;
+  if(type==="ease")return t.easeRating;
+  return Number(((t.coinRating+t.scoreRating+t.easeRating)/3).toFixed(2));
+}
+function renderStrategy(){
+  $("#rankingOwnedOnlyButton").textContent=rankingOwnedOnly?"所持ツムのみ":"全ツム表示";
+  document.querySelectorAll("[data-ranking-type]").forEach(b=>b.classList.toggle("active",b.dataset.rankingType===rankingType));
+  let rows=tsums.filter(t=>(!rankingOwnedOnly||t.owned>0)&&ratingValue(t,rankingType)>0);
+  rows.sort((a,b)=>ratingValue(b,rankingType)-ratingValue(a,rankingType)||a.name.localeCompare(b.name,"ja"));
+  $("#personalRankingList").innerHTML=rows.slice(0,30).map((t,i)=>`<div class="personal-ranking-item">
+    <span>${i+1}</span><div class="avatar">${avatarHtml(t)}</div><div><strong>${esc(t.name)}</strong><small>${rankingType==="overall"?"総合":rankingType==="coin"?"コイン":rankingType==="score"?"スコア":"使いやすさ"} ${ratingValue(t,rankingType).toFixed(rankingType==="overall"?1:0)}／5</small></div><button data-strategy-id="${t.id}">詳細</button>
+  </div>`).join("")||`<div class="helper">評価を登録したツムがありません。</div>`;
+  $("#personalRankingList").querySelectorAll("[data-strategy-id]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.strategyId);if(t)openDetail(t)});
+  renderMissionSearch();
+  const coin=tsums.filter(t=>t.coinRating>0).length,score=tsums.filter(t=>t.scoreRating>0).length,ease=tsums.filter(t=>t.easeRating>0).length;
+  $("#ratingCoverage").innerHTML=`<div><b>${coin}</b><span>コイン評価済み</span></div><div><b>${score}</b><span>スコア評価済み</span></div><div><b>${ease}</b><span>使いやすさ評価済み</span></div>`;
+}
+function renderMissionSearch(){
+  const q=$("#missionSearchInput").value.trim().toLowerCase();
+  const rows=q?tsums.filter(t=>t.missionTags.some(tag=>tag.toLowerCase().includes(q))&&(t.owned>0||!rankingOwnedOnly)).sort((a,b)=>ratingValue(b,"overall")-ratingValue(a,"overall")).slice(0,30):[];
+  $("#missionResultList").innerHTML=rows.map(t=>`<div class="mini-item"><div class="avatar">${avatarHtml(t)}</div><div><strong>${esc(t.name)}</strong><small>${t.missionTags.filter(tag=>tag.toLowerCase().includes(q)).map(tag=>`<span class="mission-match">${esc(tag)}</span>`).join("")}</small></div><button data-mission-id="${t.id}">詳細</button></div>`).join("")||`<div class="helper">${q?"一致する適性タグがありません。":"ミッション名を入力してください。"}</div>`;
+  $("#missionResultList").querySelectorAll("[data-mission-id]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.missionId);if(t)openDetail(t)});
+}
 
 function createSnapshot(){
   const s=summary();
@@ -435,6 +468,7 @@ function renderAll(){
   if(activeView==="list")renderList();
   if(activeView==="training")renderTraining();
   if(activeView==="stats")renderStats();
+  if(activeView==="strategy")renderStrategy();
   if(activeView==="goals")renderGoals();
   if(activeView==="planner")renderPlanner();
   if(activeView==="box")renderBox();
@@ -443,7 +477,9 @@ function openEdit(t=null){
   $("#dialogTitle").textContent=t?"ツムを編集":"ツムを追加";$("#editId").value=t?.id||"";
   $("#editName").value=t?.name||"";$("#editCategory").value=t?.category||"プレミアム";
   $("#editRequired").value=t?.required||36;$("#editOwned").value=t?.owned||0;
-  $("#editPriority").value=String(t?.priority||0);$("#editTags").value=(t?.tags||[]).join(",");$("#editMemo").value=t?.memo||"";
+  $("#editPriority").value=String(t?.priority||0);$("#editTags").value=(t?.tags||[]).join(",");
+  $("#editCoinRating").value=String(t?.coinRating||0);$("#editScoreRating").value=String(t?.scoreRating||0);$("#editEaseRating").value=String(t?.easeRating||0);
+  $("#editMissionTags").value=(t?.missionTags||[]).join(",");$("#editMemo").value=t?.memo||"";
   editingImage=t?.image||"";renderImagePreview();$("#deleteButton").style.display=t?"":"none";$("#editDialog").showModal();
 }
 function renderImagePreview(){$("#imagePreview").innerHTML=editingImage?`<img src="${editingImage}" alt="">`:""}
@@ -468,7 +504,9 @@ $("#editImageInput").onchange=e=>{
   reader.readAsDataURL(f);
 };
 $("#editForm").onsubmit=e=>{
-  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,memo:$("#editMemo").value});
+  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
+  coinRating:$("#editCoinRating").value,scoreRating:$("#editScoreRating").value,easeRating:$("#editEaseRating").value,
+  missionTags:$("#editMissionTags").value,memo:$("#editMemo").value});
   if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
   save();$("#editDialog").close();renderAll();toast("保存しました");
 };
@@ -651,7 +689,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"3.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"4.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -682,6 +720,23 @@ $("#applyQuickOwnedButton").onclick=()=>{
 
 
 
+
+
+document.querySelectorAll("[data-ranking-type]").forEach(b=>b.onclick=()=>{rankingType=b.dataset.rankingType;renderStrategy()});
+$("#rankingOwnedOnlyButton").onclick=()=>{rankingOwnedOnly=!rankingOwnedOnly;renderStrategy()};
+$("#missionSearchInput").oninput=renderMissionSearch;
+$("#calculateProbabilityButton").onclick=()=>{
+  const total=Math.max(1,Number($("#probTsumCount").value)||1);
+  const target=Math.max(1,Math.min(total,Number($("#probTargetCount").value)||1));
+  const draws=Math.max(1,Number($("#probDrawCount").value)||1);
+  const cost=Math.max(1,Number($("#probBoxCost").value)||30000);
+  const p=target/total;
+  const atLeastOne=1-Math.pow(1-p,draws);
+  const expected=draws*p;
+  const fifty=Math.ceil(Math.log(0.5)/Math.log(1-p));
+  const ninety=Math.ceil(Math.log(0.1)/Math.log(1-p));
+  $("#probabilityResult").innerHTML=`1回あたりの当選確率：${(p*100).toFixed(2)}%<br>${draws}回で1体以上引ける確率：${(atLeastOne*100).toFixed(2)}%<br>期待獲得数：${expected.toFixed(2)}体<br>50%到達の目安：${fifty}回（${(fifty*cost).toLocaleString("ja-JP")}コイン）<br>90%到達の目安：${ninety}回（${(ninety*cost).toLocaleString("ja-JP")}コイン）`;
+};
 
 $("#saveSnapshotButton").onclick=createSnapshot;
 $("#deleteLastSnapshotButton").onclick=()=>{
@@ -737,9 +792,9 @@ function csvEscape(value){
   return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
 }
 $("#exportCsvButton").onclick=()=>{
-  const header=["name","category","owned","required","favorite","priority","tags","memo"];
+  const header=["name","category","owned","required","favorite","priority","tags","coinRating","scoreRating","easeRating","missionTags","memo"];
   const rows=tsums.map(t=>[
-    t.name,t.category,t.owned,t.required,t.favorite?1:0,t.priority,(t.tags||[]).join("|"),t.memo
+    t.name,t.category,t.owned,t.required,t.favorite?1:0,t.priority,(t.tags||[]).join("|"),t.coinRating,t.scoreRating,t.easeRating,(t.missionTags||[]).join("|"),t.memo
   ].map(csvEscape).join(","));
   const csv="\uFEFF"+[header.join(","),...rows].join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
@@ -781,6 +836,10 @@ $("#importCsvInput").onchange=e=>{
         if(indexOf("favorite")>=0)t.favorite=["1","true","TRUE"].includes(row[indexOf("favorite")]);
         if(indexOf("priority")>=0)t.priority=Number(row[indexOf("priority")])||0;
         if(indexOf("tags")>=0)t.tags=(row[indexOf("tags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
+        if(indexOf("coinRating")>=0)t.coinRating=Math.max(0,Math.min(5,Number(row[indexOf("coinRating")])||0));
+        if(indexOf("scoreRating")>=0)t.scoreRating=Math.max(0,Math.min(5,Number(row[indexOf("scoreRating")])||0));
+        if(indexOf("easeRating")>=0)t.easeRating=Math.max(0,Math.min(5,Number(row[indexOf("easeRating")])||0));
+        if(indexOf("missionTags")>=0)t.missionTags=(row[indexOf("missionTags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
         if(indexOf("memo")>=0)t.memo=row[indexOf("memo")]||"";
         updated++;
       }

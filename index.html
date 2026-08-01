@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 3.0</title>
+  <title>TsumManager 4.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 3.0</p>
+      <p>TsumManager 4.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -223,6 +223,31 @@
       </article>
     </section>
 
+
+    <section id="strategyView" class="view" hidden>
+      <article class="panel">
+        <div class="section-title"><h2>自分専用ランキング</h2><button id="rankingOwnedOnlyButton">所持ツムのみ</button></div>
+        <div class="ranking-tabs">
+          <button class="active" data-ranking-type="coin">コイン</button>
+          <button data-ranking-type="score">スコア</button>
+          <button data-ranking-type="ease">使いやすさ</button>
+          <button data-ranking-type="overall">総合</button>
+        </div>
+        <div id="personalRankingList" class="personal-ranking-list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>ミッション適性検索</h2>
+        <input id="missionSearchInput" type="search" placeholder="例：フィーバー、コンボ、ボム">
+        <div id="missionResultList" class="mini-list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>攻略データの登録状況</h2>
+        <div id="ratingCoverage" class="stats-grid"></div>
+      </article>
+    </section>
+
     <section id="statsView" class="view" hidden>
       <article class="panel">
         <h2>カテゴリ別進捗</h2>
@@ -376,6 +401,7 @@
     <button data-view="list"><span>☷</span><b>一覧</b></button>
     <button data-view="box"><span>＋</span><b>入力</b></button>
     <button data-view="goals"><span>★</span><b>目標</b></button>
+    <button data-view="strategy"><span>◆</span><b>攻略</b></button>
     <button data-view="planner"><span>◎</span><b>計画</b></button>
     <button data-view="settings"><span>⚙</span><b>設定</b></button>
   </nav>
@@ -407,6 +433,28 @@
     <label>タグ（カンマ区切り）
       <input id="editTags" placeholder="例：プリンセス,スターウォーズ">
     </label>
+    <div class="form-grid">
+      <label>コイン評価
+        <select id="editCoinRating">
+          <option value="0">未設定</option><option value="1">★1</option><option value="2">★2</option><option value="3">★3</option><option value="4">★4</option><option value="5">★5</option>
+        </select>
+      </label>
+      <label>スコア評価
+        <select id="editScoreRating">
+          <option value="0">未設定</option><option value="1">★1</option><option value="2">★2</option><option value="3">★3</option><option value="4">★4</option><option value="5">★5</option>
+        </select>
+      </label>
+    </div>
+    <div class="form-grid">
+      <label>使いやすさ
+        <select id="editEaseRating">
+          <option value="0">未設定</option><option value="1">★1</option><option value="2">★2</option><option value="3">★3</option><option value="4">★4</option><option value="5">★5</option>
+        </select>
+      </label>
+      <label>ミッション適性
+        <input id="editMissionTags" placeholder="例：フィーバー,コンボ,ボム">
+      </label>
+    </div>
     <label>メモ<textarea id="editMemo"></textarea></label>
     <button type="button" id="openDetailFromEditButton" class="secondary-button">詳細画面を開く</button>
     <div class="dialog-actions">
