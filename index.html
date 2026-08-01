@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 2.0</title>
+  <title>TsumManager 3.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 2.0</p>
+      <p>TsumManager 3.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -49,6 +49,13 @@
 
 
 
+
+
+      <article class="panel">
+        <div class="section-title"><h2>進捗記録</h2><button id="saveSnapshotButton">現在を記録</button></div>
+        <div id="snapshotSummary" class="snapshot-summary"></div>
+        <div id="snapshotChart" class="snapshot-chart"></div>
+      </article>
 
       <article class="panel assistant-panel">
         <div class="section-title"><h2>育成アシスタント</h2><button id="refreshAssistantButton">更新</button></div>
@@ -261,6 +268,27 @@
     </section>
 
     <section id="plannerView" class="view" hidden>
+
+      <article class="panel">
+        <h2>コイン予算シミュレーター</h2>
+        <div class="budget-grid">
+          <label>現在のコイン
+            <input id="budgetCurrentCoins" type="number" min="0" value="0">
+          </label>
+          <label>1日に稼ぐコイン
+            <input id="budgetDailyCoins" type="number" min="0" value="50000">
+          </label>
+          <label>目標日
+            <input id="budgetTargetDate" type="date">
+          </label>
+          <label>1回のBOX
+            <input id="budgetBoxCost" type="number" min="1" value="30000">
+          </label>
+        </div>
+        <button id="calculateBudgetButton" class="primary-button">計算する</button>
+        <div id="budgetResult" class="result-box">条件を入力して計算してください。</div>
+      </article>
+
       <article class="panel">
         <div class="section-title"><h2>ガチャ計画</h2><button id="newPlanButton">新規作成</button></div>
         <p class="helper">セレクトBOXやピックアップの対象ツムを登録し、必要数と必要コインを計算します。</p>
@@ -285,6 +313,14 @@
         <label class="switch-row"><span>一覧をコンパクト表示</span><input id="compactToggle" type="checkbox"></label>
       </article>
 
+
+
+      <article class="panel settings-panel">
+        <h2>進捗記録管理</h2>
+        <p class="helper">記録はバックアップにも含まれます。</p>
+        <button id="deleteLastSnapshotButton">最新の進捗記録を削除</button>
+        <button id="clearSnapshotsButton" class="danger-button">進捗記録をすべて削除</button>
+      </article>
 
       <article class="panel settings-panel">
         <h2>CSVデータ</h2>
@@ -404,6 +440,9 @@
     </label>
     <label>期限
       <input id="goalDeadline" type="date">
+    </label>
+    <label>途中目標（任意）
+      <input id="goalMilestone" type="number" min="1" max="999" placeholder="例：20">
     </label>
     <label>メモ<textarea id="goalMemo"></textarea></label>
     <div class="dialog-actions">

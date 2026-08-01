@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 2.0",
+  "name": "TsumManager 3.0",
   "short_name": "ツム管理",
-  "description": "ツムツムの図鑑・育成目標・スキルチケット・ガチャ計画を管理する個人用Webアプリ",
+  "description": "ツムツムの図鑑・育成目標・進捗履歴・コイン予算を管理する個人用Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

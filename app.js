@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV20", HISTORY_KEY="tsumManagerHistoryV20", RECENT_KEY="tsumManagerRecentV20", PLAN_KEY="tsumManagerPlansV20", TODAY_KEY="tsumManagerTodayV20", UNDO_KEY="tsumManagerUndoV20", GOAL_KEY="tsumManagerGoalsV20", TICKET_STOCK_KEY="tsumManagerTicketStockV20";
+const KEYS=["tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV30", HISTORY_KEY="tsumManagerHistoryV30", RECENT_KEY="tsumManagerRecentV30", PLAN_KEY="tsumManagerPlansV30", TODAY_KEY="tsumManagerTodayV30", UNDO_KEY="tsumManagerUndoV30", GOAL_KEY="tsumManagerGoalsV30", TICKET_STOCK_KEY="tsumManagerTicketStockV30", SNAPSHOT_KEY="tsumManagerSnapshotsV30";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -31,6 +31,7 @@ let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}c
 let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catch(e){return[]}})();
 let goals=(()=>{try{return JSON.parse(localStorage.getItem(GOAL_KEY)||"[]")}catch(e){return[]}})();
 let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
+let snapshots=(()=>{try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"[]")}catch(e){return[]}})();
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,increment=1;
@@ -41,6 +42,7 @@ function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slic
 function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
 function saveGoals(){localStorage.setItem(GOAL_KEY,JSON.stringify(goals))}
 function saveTicketStock(){localStorage.setItem(TICKET_STOCK_KEY,String(ticketStock))}
+function saveSnapshots(){localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snapshots.slice(-60)))}
 function saveToday(){todayTrainingId?localStorage.setItem(TODAY_KEY,todayTrainingId):localStorage.removeItem(TODAY_KEY)}
 function saveUndo(){undoState?localStorage.setItem(UNDO_KEY,JSON.stringify(undoState)):localStorage.removeItem(UNDO_KEY)}
 function setUndo(description,changes){
@@ -151,6 +153,7 @@ function summary(){
 function renderHome(){
   const s=summary();
   $("#homePercent").textContent=s.percent+"%";$("#ringPercent").textContent=s.percent+"%";
+  renderSnapshots();
   const today=tsums.find(t=>t.id===todayTrainingId);
   $("#todayTrainingCard").innerHTML=today?`<div class="avatar">${avatarHtml(today)}</div><div><strong>${esc(today.name)}</strong><small>${skillText(today)} ・ 残り${remain(today)} ・ ${pct(today)}%</small></div><button data-today-detail="${today.id}">詳細</button>`:`<div class="helper">今日の育成ツムは未設定です。</div>`;
   $("#todayTrainingCard").querySelectorAll("[data-today-detail]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.todayDetail);if(t)openDetail(t)});
@@ -187,6 +190,44 @@ function miniHtml(t,recommend=false){
 }
 
 
+
+function createSnapshot(){
+  const s=summary();
+  snapshots.push({
+    id:crypto.randomUUID(),
+    date:new Date().toISOString(),
+    percent:s.percent,
+    ownedTsums:s.ownedTsums,
+    maxed:s.maxed,
+    remaining:s.remaining,
+    totalOwned:s.owned
+  });
+  snapshots=snapshots.slice(-60);
+  saveSnapshots();
+  renderSnapshots();
+  toast("現在の進捗を記録しました");
+}
+function renderSnapshots(){
+  const summaryEl=$("#snapshotSummary"),chart=$("#snapshotChart");
+  if(!summaryEl||!chart)return;
+  if(!snapshots.length){
+    summaryEl.innerHTML=`<div><b>0</b><span>記録数</span></div><div><b>—</b><span>前回比</span></div><div><b>—</b><span>スキルマ増加</span></div>`;
+    chart.innerHTML=`<div class="snapshot-empty">「現在を記録」を押すと、進捗の変化を確認できます。</div>`;
+    return;
+  }
+  const latest=snapshots[snapshots.length-1],prev=snapshots[snapshots.length-2];
+  const diff=prev?latest.percent-prev.percent:0;
+  const maxDiff=prev?latest.maxed-prev.maxed:0;
+  summaryEl.innerHTML=`<div><b>${snapshots.length}</b><span>記録数</span></div><div><b>${diff>=0?"+":""}${diff}%</b><span>前回比</span></div><div><b>${maxDiff>=0?"+":""}${maxDiff}</b><span>スキルマ増加</span></div>`;
+  const rows=snapshots.slice(-12);
+  const maxPercent=Math.max(1,...rows.map(x=>x.percent));
+  chart.innerHTML=rows.map(x=>{
+    const h=Math.max(3,Math.round(x.percent/maxPercent*100));
+    const d=new Date(x.date);
+    return `<div class="snapshot-bar"><b>${x.percent}%</b><i style="height:${h}%"></i><span>${d.getMonth()+1}/${d.getDate()}</span></div>`;
+  }).join("");
+}
+
 function buildAssistantSuggestions(){
   const rows=[];
   const seen=new Set();
@@ -213,7 +254,7 @@ function renderGoals(){
     const days=deadline?Math.ceil((deadline-new Date())/86400000):null;
     return `<article class="goal-card">
       <div class="goal-card-head"><strong>${esc(t.name)}</strong><button data-edit-goal="${g.id}">編集</button></div>
-      <div class="goal-card-meta"><span>${g.type==="max"?"スキルマ":`所持数${target}`}</span><span>残り${need}</span>${g.deadline?`<span>期限 ${esc(g.deadline)}</span>`:""}</div>
+      <div class="goal-card-meta"><span>${g.type==="max"?"スキルマ":`所持数${target}`}</span><span>残り${need}</span>${g.deadline?`<span>期限 ${esc(g.deadline)}</span>`:""}${g.milestone?`<span class="milestone-badge">途中目標 ${g.milestone}</span>`:""}</div>
       <div class="goal-progress"><i style="width:${p}%"></i></div>
       ${days!==null&&days<0?`<div class="goal-warning">期限を過ぎています。</div>`:days!==null?`<div class="goal-warning">期限まであと${days}日</div>`:""}
     </article>`;
@@ -231,6 +272,7 @@ function openGoal(goal=null){
   $("#goalType").value=goal?.type||"max";
   $("#goalTargetOwned").value=goal?.targetOwned||36;
   $("#goalDeadline").value=goal?.deadline||"";
+  $("#goalMilestone").value=goal?.milestone||"";
   $("#goalMemo").value=goal?.memo||"";
   $("#deleteGoalButton").style.display=goal?"":"none";
   toggleGoalTarget();
@@ -609,15 +651,15 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"2.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"3.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);if(Array.isArray(j.snapshots))snapshots=j.snapshots;save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveToday();saveUndo();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];snapshots=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveSnapshots();saveToday();saveUndo();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{
@@ -640,6 +682,30 @@ $("#applyQuickOwnedButton").onclick=()=>{
 
 
 
+
+$("#saveSnapshotButton").onclick=createSnapshot;
+$("#deleteLastSnapshotButton").onclick=()=>{
+  if(!snapshots.length){toast("削除する記録がありません");return}
+  snapshots.pop();saveSnapshots();renderSnapshots();toast("最新の記録を削除しました");
+};
+$("#clearSnapshotsButton").onclick=()=>{
+  if(confirm("進捗記録をすべて削除しますか？")){snapshots=[];saveSnapshots();renderSnapshots();toast("進捗記録を削除しました")}
+};
+$("#calculateBudgetButton").onclick=()=>{
+  const current=Math.max(0,Number($("#budgetCurrentCoins").value)||0);
+  const daily=Math.max(0,Number($("#budgetDailyCoins").value)||0);
+  const cost=Math.max(1,Number($("#budgetBoxCost").value)||30000);
+  const targetText=$("#budgetTargetDate").value;
+  if(!targetText){alert("目標日を選択してください");return}
+  const target=new Date(targetText+"T23:59:59");
+  const now=new Date();
+  const days=Math.max(0,Math.ceil((target-now)/86400000));
+  const future=current+daily*days;
+  const boxes=Math.floor(future/cost);
+  const remainder=future-boxes*cost;
+  $("#budgetResult").innerHTML=`目標日まで：${days}日<br>予想コイン：${future.toLocaleString("ja-JP")}コイン<br>引けるBOX：${boxes.toLocaleString("ja-JP")}回<br>BOX後の残り：${remainder.toLocaleString("ja-JP")}コイン`;
+};
+
 $("#refreshAssistantButton").onclick=()=>{renderHome();toast("育成候補を更新しました")};
 $("#newGoalButton").onclick=()=>openGoal();
 $("#goalType").onchange=toggleGoalTarget;
@@ -650,7 +716,7 @@ $("#goalForm").onsubmit=e=>{
   const t=tsums.find(x=>x.name===name);
   if(!t&&!confirm("登録済みツムと名前が一致しません。このまま保存しますか？"))return;
   const id=$("#goalId").value||crypto.randomUUID();
-  const obj={id,tsumName:name,type:$("#goalType").value,targetOwned:Number($("#goalTargetOwned").value)||36,deadline:$("#goalDeadline").value,memo:$("#goalMemo").value.trim()};
+  const obj={id,tsumName:name,type:$("#goalType").value,targetOwned:Number($("#goalTargetOwned").value)||36,deadline:$("#goalDeadline").value,milestone:Number($("#goalMilestone").value)||0,memo:$("#goalMemo").value.trim()};
   const i=goals.findIndex(g=>g.id===id);if(i>=0)goals[i]=obj;else goals.push(obj);
   saveGoals();$("#goalDialog").close();renderGoals();renderHome();toast("育成目標を保存しました");
 };
