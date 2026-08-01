@@ -1,10 +1,11 @@
 {
-  "name": "TsumManager Ver.4",
+  "name": "TsumManager Ver.5",
   "short_name": "ツム管理",
+  "description": "ツムツムの所持数・スキルマ・育成予定を管理する個人用Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f6fb",
+  "background_color": "#f4f5fb",
   "theme_color": "#6d28d9",
   "icons": [
     {
