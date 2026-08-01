@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV63", HISTORY_KEY="tsumManagerHistoryV63", RECENT_KEY="tsumManagerRecentV63", PLAN_KEY="tsumManagerPlansV63", TODAY_KEY="tsumManagerTodayV63", UNDO_KEY="tsumManagerUndoV63", GOAL_KEY="tsumManagerGoalsV63", TICKET_STOCK_KEY="tsumManagerTicketStockV63", SNAPSHOT_KEY="tsumManagerSnapshotsV63", TASK_KEY="tsumManagerTasksV63", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV63", BACKUP_META_KEY="tsumManagerBackupMetaV63";
+const KEYS=["tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV631", HISTORY_KEY="tsumManagerHistoryV631", RECENT_KEY="tsumManagerRecentV631", PLAN_KEY="tsumManagerPlansV631", TODAY_KEY="tsumManagerTodayV631", UNDO_KEY="tsumManagerUndoV631", GOAL_KEY="tsumManagerGoalsV631", TICKET_STOCK_KEY="tsumManagerTicketStockV631", SNAPSHOT_KEY="tsumManagerSnapshotsV631", TASK_KEY="tsumManagerTasksV631", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV631", BACKUP_META_KEY="tsumManagerBackupMetaV631";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -8,12 +8,6 @@ document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 
-let lastTouchEnd=0;
-document.addEventListener("touchend",e=>{
-  const now=Date.now();
-  if(now-lastTouchEnd<=300)e.preventDefault();
-  lastTouchEnd=now;
-},{passive:false});
 
 function stabilizeMobileViewport(){
   document.documentElement.style.setProperty("--app-vw",`${document.documentElement.clientWidth}px`);
@@ -1058,7 +1052,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1177,7 +1171,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3",
+    version:"6.3.1",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1208,29 +1202,106 @@ function buildFullBackup(){
     }
   };
 }
-function downloadJsonFile(data,fileName){
+function makeBackupFile(data,fileName){
   const json=JSON.stringify(data,null,2);
   const blob=new Blob([json],{type:"application/json;charset=utf-8"});
+  let file=null;
+  try{
+    file=new File([blob],fileName,{type:"application/json",lastModified:Date.now()});
+  }catch(e){}
+  return {json,blob,file,size:blob.size,fileName};
+}
+async function saveBackupFile(data,fileName,preferShare=true){
+  const result=makeBackupFile(data,fileName);
+
+  // iPhone/iPadでは共有シートを開き、「ファイルに保存」を選べるようにする。
+  if(preferShare&&result.file&&navigator.share&&navigator.canShare){
+    try{
+      if(navigator.canShare({files:[result.file]})){
+        await navigator.share({
+          files:[result.file],
+          title:"TsumManagerバックアップ",
+          text:"画像を含むTsumManagerのバックアップです。"
+        });
+        return {...result,method:"share"};
+      }
+    }catch(err){
+      if(err&&err.name==="AbortError"){
+        return {...result,method:"cancelled"};
+      }
+      console.warn("共有保存に失敗したためダウンロードへ切替",err);
+    }
+  }
+
+  // PCや共有非対応ブラウザでは通常のダウンロード。
+  const url=URL.createObjectURL(result.blob);
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
+  a.href=url;
   a.download=fileName;
+  a.rel="noopener";
+  a.style.display="none";
+  document.body.appendChild(a);
   a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  return new Blob([json]).size;
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  return {...result,method:"download"};
 }
 function backupFileName(prefix="TsumManager_Backup"){
   const d=new Date();
   const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
   return `${prefix}_${stamp}.json`;
 }
-function exportFullBackup(prefix="TsumManager_Backup"){
-  const data=buildFullBackup();
-  const size=downloadJsonFile(data,backupFileName(prefix));
-  const meta={time:new Date().toISOString(),size,images:tsums.filter(t=>t.image).length,version:"6.3"};
-  localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
-  renderBackupSummary();
-  $("#backupStatus").innerHTML=`バックアップを作成しました。<br>画像：${meta.images}体<br>ファイルサイズ：約${formatBytes(size)}`;
-  return meta;
+async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
+  const status=$("#backupStatus");
+  const fullButton=$("#exportFullBackupButton");
+  const quickButton=$("#quickBackupButton");
+  const oldFull=fullButton?.textContent;
+  const oldQuick=quickButton?.textContent;
+
+  try{
+    if(status)status.innerHTML="バックアップを作成しています…";
+    if(fullButton)fullButton.disabled=true;
+    if(quickButton)quickButton.disabled=true;
+
+    // タップ処理をSafariへ返してから大きなJSONを生成する。
+    await new Promise(resolve=>setTimeout(resolve,30));
+
+    const data=buildFullBackup();
+    const result=await saveBackupFile(data,backupFileName(prefix),preferShare);
+
+    if(result.method==="cancelled"){
+      if(status)status.innerHTML="保存をキャンセルしました。データは変更されていません。";
+      return null;
+    }
+
+    const meta={
+      time:new Date().toISOString(),
+      size:result.size,
+      images:tsums.filter(t=>t.image).length,
+      version:"6.3.1",
+      method:result.method
+    };
+    localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
+    renderBackupSummary();
+
+    const guide=result.method==="share"
+      ?"共有画面で「ファイルに保存」を選び、iCloud Driveなどへ保存してください。"
+      :"ダウンロードされたJSONファイルを「ファイル」アプリなどへ保管してください。";
+
+    if(status){
+      status.innerHTML=`バックアップを作成しました。<br>画像：${meta.images}体<br>ファイルサイズ：約${formatBytes(result.size)}<br>${guide}`;
+    }
+    toast("バックアップを作成しました");
+    return meta;
+  }catch(err){
+    console.error(err);
+    if(status)status.innerHTML=`バックアップに失敗しました。<br>${esc(err?.message||String(err))}`;
+    alert("バックアップに失敗しました："+(err?.message||String(err)));
+    return null;
+  }finally{
+    if(fullButton){fullButton.disabled=false;fullButton.textContent=oldFull}
+    if(quickButton){quickButton.disabled=false;quickButton.textContent=oldQuick}
+  }
 }
 function formatBytes(bytes){
   if(bytes<1024)return `${bytes} B`;
@@ -1299,20 +1370,26 @@ function csvEscape(value){
   return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
 }
 
-$("#exportFullBackupButton").onclick=()=>exportFullBackup();
-$("#quickBackupButton").onclick=()=>exportFullBackup("TsumManager_UpdateBefore");
+$("#exportFullBackupButton").onclick=async e=>{
+  e.preventDefault();
+  await exportFullBackup("TsumManager_Backup",true);
+};
+$("#quickBackupButton").onclick=async e=>{
+  e.preventDefault();
+  await exportFullBackup("TsumManager_UpdateBefore",true);
+};
 $("#checkStorageButton").onclick=()=>{renderStorageHealth();toast("保存状態を確認しました")};
 $("#importFullBackupInput").onchange=e=>{
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=()=>{
+  reader.onload=async ()=>{
     try{
       const data=JSON.parse(String(reader.result));
       validateBackup(data);
       const imageCount=data.tsums.filter(t=>t.image).length;
       const message=`バックアップを読み込みます。\n\nツム数：${data.tsums.length}体\n画像：${imageCount}体\n作成日時：${data.exportedAt?new Date(data.exportedAt).toLocaleString("ja-JP"):"不明"}\n\n現在のデータは置き換えられます。`;
       if(!confirm(message))return;
-      if($("#autoBackupBeforeImport").checked)exportFullBackup("TsumManager_BeforeRestore");
+      if($("#autoBackupBeforeImport").checked)await exportFullBackup("TsumManager_BeforeRestore",false);
       restoreFullBackup(data);
       $("#backupStatus").innerHTML=`バックアップを復元しました。<br>ツム：${data.tsums.length}体／画像：${imageCount}体`;
       toast("バックアップを復元しました");

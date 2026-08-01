@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.3",
+  "name": "TsumManager 6.3.1",
   "short_name": "ツム管理",
-  "description": "Game8の全ツム一覧とスキルマ必要数を反映したデータ更新版",
+  "description": "iPhoneでバックアップボタンが反応しない問題を修正したTsumManager 6.3修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

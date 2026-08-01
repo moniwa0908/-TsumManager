@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 6.3</title>
+  <title>TsumManager 6.3.1</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 6.3</p>
+      <p>TsumManager 6.3.1</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -382,12 +382,13 @@
         <h2>完全バックアップ</h2>
         <p class="helper">所持数・画像・お気に入り・メモ・タグ・評価・目標・履歴などを、1つのJSONファイルに保存します。</p>
         <div id="backupSummary" class="backup-summary"></div>
-        <button id="exportFullBackupButton" class="primary-button">画像込みバックアップを書き出す</button>
+        <button type="button" id="exportFullBackupButton" class="primary-button">画像込みバックアップを書き出す</button>
         <label class="file-button">バックアップを読み込む
           <input id="importFullBackupInput" type="file" accept=".json,application/json">
         </label>
         <label class="switch-row"><span>読込前に現在のデータを自動バックアップ</span><input id="autoBackupBeforeImport" type="checkbox" checked></label>
-        <button id="quickBackupButton">更新前クイックバックアップ</button>
+        <button type="button" id="quickBackupButton">更新前クイックバックアップ</button>
+        <p class="backup-ios-guide">iPhoneでは共有画面が開きます。「ファイルに保存」→「iCloud Drive」などを選んでください。</p>
         <div id="backupStatus" class="result-box">まだバックアップは作成されていません。</div>
       </article>
 

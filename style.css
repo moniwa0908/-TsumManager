@@ -487,3 +487,17 @@ dialog{
 .storage-health b{display:block}
 .storage-health span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
 @media(max-width:560px){.backup-summary{grid-template-columns:1fr 1fr}}
+
+.backup-ios-guide{
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f5f3ff;
+  color:#5b21b6;
+  font-size:12px;
+  line-height:1.6;
+}
+#exportFullBackupButton:disabled,
+#quickBackupButton:disabled{
+  opacity:.55;
+  pointer-events:none;
+}
