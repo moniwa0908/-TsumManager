@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV60", HISTORY_KEY="tsumManagerHistoryV60", RECENT_KEY="tsumManagerRecentV60", PLAN_KEY="tsumManagerPlansV60", TODAY_KEY="tsumManagerTodayV60", UNDO_KEY="tsumManagerUndoV60", GOAL_KEY="tsumManagerGoalsV60", TICKET_STOCK_KEY="tsumManagerTicketStockV60", SNAPSHOT_KEY="tsumManagerSnapshotsV60", TASK_KEY="tsumManagerTasksV60", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV60";
+const KEYS=["tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV601", HISTORY_KEY="tsumManagerHistoryV601", RECENT_KEY="tsumManagerRecentV601", PLAN_KEY="tsumManagerPlansV601", TODAY_KEY="tsumManagerTodayV601", UNDO_KEY="tsumManagerUndoV601", GOAL_KEY="tsumManagerGoalsV601", TICKET_STOCK_KEY="tsumManagerTicketStockV601", SNAPSHOT_KEY="tsumManagerSnapshotsV601", TASK_KEY="tsumManagerTasksV601", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV601";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -836,25 +836,35 @@ $("#bulkImageInput").onchange=async e=>{
   for(const file of files){
     const base=normalizeImageFileName(file.name);
     const compactBase=base.replace(/\s/g,"");
-    let t=tsums.find(x=>{
-      const name=normalizeImageFileName(x.name),compactName=name.replace(/\s/g,"");
+    const exactCandidates=tsums.filter(x=>{
+      const name=normalizeImageFileName(x.name);
+      const compactName=name.replace(/\s/g,"");
       return name===base||compactName===compactBase;
     });
-    if(!t&&$("#fuzzyImageMatchToggle").checked){
-      const candidates=tsums.filter(x=>{
-        const compactName=normalizeImageFileName(x.name).replace(/\s/g,"");
-        return compactName.includes(compactBase)||compactBase.includes(compactName);
-      });
-      if(candidates.length===1)t=candidates[0];
+    let t=exactCandidates.length===1?exactCandidates[0]:null;
+
+    if(!t){
+      let suggestion="";
+      if($("#fuzzyImageMatchToggle").checked){
+        const fuzzyCandidates=tsums.filter(x=>{
+          const compactName=normalizeImageFileName(x.name).replace(/\s/g,"");
+          return compactBase.length>=3&&compactName.length>=3&&
+            (compactName.includes(compactBase)||compactBase.includes(compactName));
+        }).slice(0,5);
+        if(fuzzyCandidates.length){
+          suggestion=` → 候補: ${fuzzyCandidates.map(x=>x.name).join(" / ")}`;
+        }
+      }
+      unmatched.push(file.name+suggestion);
+      continue;
     }
-    if(!t){unmatched.push(file.name);continue}
     try{
       t.image=await compressImageFile(file);
       matched++;
     }catch(err){failed.push(file.name)}
   }
   save();renderAll();
-  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">登録成功：${matched}件</span><br><span class="bulk-result-warn">名前不一致：${unmatched.length}件</span><br>読込失敗：${failed.length}件${unmatched.length?`<br><br>名前不一致：<br>${unmatched.slice(0,30).map(esc).join("<br>")}${unmatched.length>30?"<br>ほか":""}`:""}`;
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">登録成功：${matched}件</span><br><span class="bulk-result-warn">未登録（完全一致なし）：${unmatched.length}件</span><br>読込失敗：${failed.length}件${unmatched.length?`<br><br>未登録ファイル：<br>${unmatched.slice(0,30).map(esc).join("<br>")}${unmatched.length>30?"<br>ほか":""}`:""}`;
   toast(`${matched}体の画像を登録しました`);
   e.target.value="";
 };
@@ -959,7 +969,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

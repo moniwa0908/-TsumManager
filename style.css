@@ -313,3 +313,5 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg
   .data-status-grid{grid-template-columns:1fr 1fr}
   .missing-data-item{grid-template-columns:1fr}
 }
+
+.bulk-safety-note{padding:9px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px}

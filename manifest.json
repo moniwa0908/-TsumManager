@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.0",
+  "name": "TsumManager 6.0.1",
   "short_name": "ツム管理",
-  "description": "画像一括登録、登場年月・シリーズ管理、図鑑整理を強化した個人用ツム管理Webアプリ",
+  "description": "画像一括登録の誤一致を防止した個人用ツム管理Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
