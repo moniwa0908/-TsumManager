@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV632", HISTORY_KEY="tsumManagerHistoryV632", RECENT_KEY="tsumManagerRecentV632", PLAN_KEY="tsumManagerPlansV632", TODAY_KEY="tsumManagerTodayV632", UNDO_KEY="tsumManagerUndoV632", GOAL_KEY="tsumManagerGoalsV632", TICKET_STOCK_KEY="tsumManagerTicketStockV632", SNAPSHOT_KEY="tsumManagerSnapshotsV632", TASK_KEY="tsumManagerTasksV632", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV632", BACKUP_META_KEY="tsumManagerBackupMetaV632";
+const KEYS=["tsumManagerDataV633","tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV633", HISTORY_KEY="tsumManagerHistoryV633", RECENT_KEY="tsumManagerRecentV633", PLAN_KEY="tsumManagerPlansV633", TODAY_KEY="tsumManagerTodayV633", UNDO_KEY="tsumManagerUndoV633", GOAL_KEY="tsumManagerGoalsV633", TICKET_STOCK_KEY="tsumManagerTicketStockV633", SNAPSHOT_KEY="tsumManagerSnapshotsV633", TASK_KEY="tsumManagerTasksV633", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV633", BACKUP_META_KEY="tsumManagerBackupMetaV633";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -1052,7 +1052,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1177,7 +1177,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3.2",
+    version:"6.3.3",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1284,7 +1284,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"6.3.2",
+      version:"6.3.3",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));

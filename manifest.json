@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.3.2",
+  "name": "TsumManager 6.3.3",
   "short_name": "ツム管理",
-  "description": "バックアップ処理まで到達しないJavaScript停止を修正したTsumManager 6.3修正版",
+  "description": "ピグレットのスキルマ必要数を7体へ修正したデータ更新版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
