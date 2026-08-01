@@ -44,7 +44,7 @@ const norm=t=>({
   requiredVerified:!!t.requiredVerified,requiredSource:String(t.requiredSource||""),
   skillGrowth:Array.isArray(t.skillGrowth)?t.skillGrowth.map(x=>Math.max(0,Number(x)||0)):[],
   maxSkillLevel:Math.max(1,Number(t.maxSkillLevel||((Array.isArray(t.skillGrowth)?t.skillGrowth.length:5)+1))),
-  skillGrowthVerified:!!t.skillGrowthVerified,skillGrowthSource:String(t.skillGrowthSource||"")
+  skillGrowthVerified:!!t.skillGrowthVerified,skillGrowthSource:String(t.skillGrowthSource||""),aliases:Array.isArray(t.aliases)?t.aliases.map(String):[]
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 const USER_EDIT_FIELDS=[
@@ -115,7 +115,13 @@ function mergeUserStore(store){
   const byId=new Map(records.filter(r=>r.id).map(r=>[r.id,r]));
   const byName=new Map(records.filter(r=>r.name).map(r=>[r.name,r]));
   const result=master().map(m=>{
-    const record=byId.get(m.id)||byName.get(m.name);
+    let record=byId.get(m.id)||byName.get(m.name);
+    if(!record&&Array.isArray(m.aliases)){
+      for(const alias of m.aliases){
+        record=byName.get(alias);
+        if(record)break;
+      }
+    }
     return record?applyUserRecord(m,record):m;
   });
   const masterIds=new Set(result.map(t=>t.id));
@@ -1456,7 +1462,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.0 Safe Storage",
+    version:"8.0.1 Safe Storage",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1618,7 +1624,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.0 Safe Storage",
+    version:"8.0.1 Safe Storage",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1726,7 +1732,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.0 Safe Storage",
+      version:"8.0.1 Safe Storage",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1967,7 +1973,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.0 Safe Storage",
+        version:"8.0.1 Safe Storage",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

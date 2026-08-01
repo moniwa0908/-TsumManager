@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.0 Safe Storage",
+  "name": "TsumManager 8.0.1 Safe Storage",
   "short_name": "ツム管理",
-  "description": "マスターデータと個人データを分離し、所持数と画像を更新から守る安全保存版",
+  "description": "マックィーンを正式名称・正確なスキル成長表で追加修正した安全保存版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
