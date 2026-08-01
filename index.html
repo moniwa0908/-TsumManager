@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 1.0</title>
+  <title>TsumManager 1.1</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 1.0</p>
+      <p>TsumManager 1.1</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -46,6 +46,20 @@
       </div>
 
 
+
+
+      <article class="panel">
+        <div class="section-title"><h2>今日の育成</h2><button id="changeTodayTrainingButton">変更</button></div>
+        <div id="todayTrainingCard" class="today-training-card"></div>
+      </article>
+
+      <article class="panel undo-panel">
+        <div>
+          <h2>直前の操作</h2>
+          <p id="undoDescription" class="helper">取り消せる操作はありません。</p>
+        </div>
+        <button id="undoButton" class="secondary-button" disabled>取り消す</button>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>おすすめ育成候補</h2><button id="refreshRecommendButton">再計算</button></div>
@@ -91,6 +105,7 @@
             <option value="unowned">未所持</option>
             <option value="max">スキルマ</option>
             <option value="image">画像登録済み</option>
+            <option value="favorite">お気に入り</option>
           </select>
         </div>
         <div id="collectionCategoryChips" class="chips"></div>
@@ -159,6 +174,7 @@
       <article class="panel">
         <div class="section-title"><h2>直近の入力履歴</h2><button id="clearHistoryButton">履歴削除</button></div>
         <div id="historyList" class="history-list"></div>
+        <button id="restoreLastHistoryButton" class="secondary-button">最新履歴の操作を戻す</button>
       </article>
     </section>
 
@@ -315,6 +331,19 @@
 
 
 
+
+
+<dialog id="todayTrainingDialog">
+  <div class="message-dialog">
+    <h2>今日の育成ツムを選択</h2>
+    <input id="todayTrainingSearch" type="search" placeholder="ツム名を検索">
+    <div id="todayTrainingCandidates" class="candidate-list"></div>
+    <div class="dialog-actions">
+      <button id="clearTodayTrainingButton" class="danger-button">設定解除</button>
+      <button id="closeTodayTrainingButton" class="primary-button">閉じる</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="planDialog">
   <form id="planForm">

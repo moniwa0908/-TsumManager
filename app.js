@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV10", HISTORY_KEY="tsumManagerHistoryV10", RECENT_KEY="tsumManagerRecentV10", PLAN_KEY="tsumManagerPlansV10";
+const KEYS=["tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV11", HISTORY_KEY="tsumManagerHistoryV11", RECENT_KEY="tsumManagerRecentV11", PLAN_KEY="tsumManagerPlansV11", TODAY_KEY="tsumManagerTodayV11", UNDO_KEY="tsumManagerUndoV11";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -29,12 +29,28 @@ let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
 let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
 let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catch(e){return[]}})();
+let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
+let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
 function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
 function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
+function saveToday(){todayTrainingId?localStorage.setItem(TODAY_KEY,todayTrainingId):localStorage.removeItem(TODAY_KEY)}
+function saveUndo(){undoState?localStorage.setItem(UNDO_KEY,JSON.stringify(undoState)):localStorage.removeItem(UNDO_KEY)}
+function setUndo(description,changes){
+  undoState={description,changes,time:new Date().toISOString()};
+  saveUndo();
+  renderUndo();
+}
+function renderUndo(){
+  const button=$("#undoButton"),desc=$("#undoDescription");
+  if(!button||!desc)return;
+  if(!undoState){desc.textContent="取り消せる操作はありません。";button.disabled=true;return}
+  desc.textContent=undoState.description;
+  button.disabled=false;
+}
 function touchRecent(id){
   recent=[id,...recent.filter(x=>x!==id)].slice(0,20);
   saveRecent();
@@ -101,9 +117,18 @@ function wireCards(scope){
 }
 function handleCardAction(action,id){
   const t=tsums.find(x=>x.id===id);if(!t)return;
-  if(action==="plus")t.owned=Math.min(t.required,t.owned+increment);
-  if(action==="minus")t.owned=Math.max(0,t.owned-increment);
-  if(action==="favorite")t.favorite=!t.favorite;
+  if(action==="plus"){
+    const before=t.owned;t.owned=Math.min(t.required,t.owned+increment);
+    if(t.owned!==before)setUndo(`${t.name}の所持数変更を取り消す`,[{id:t.id,owned:before}]);
+  }
+  if(action==="minus"){
+    const before=t.owned;t.owned=Math.max(0,t.owned-increment);
+    if(t.owned!==before)setUndo(`${t.name}の所持数変更を取り消す`,[{id:t.id,owned:before}]);
+  }
+  if(action==="favorite"){
+    const before=t.favorite;t.favorite=!t.favorite;
+    setUndo(`${t.name}のお気に入り変更を取り消す`,[{id:t.id,favorite:before}]);
+  }
   if(action==="detail"){touchRecent(t.id);openDetail(t);return}
   if(action==="edit"){touchRecent(t.id);openEdit(t);return}
   touchRecent(t.id);
@@ -121,6 +146,10 @@ function summary(){
 function renderHome(){
   const s=summary();
   $("#homePercent").textContent=s.percent+"%";$("#ringPercent").textContent=s.percent+"%";
+  const today=tsums.find(t=>t.id===todayTrainingId);
+  $("#todayTrainingCard").innerHTML=today?`<div class="avatar">${avatarHtml(today)}</div><div><strong>${esc(today.name)}</strong><small>${skillText(today)} ・ 残り${remain(today)} ・ ${pct(today)}%</small></div><button data-today-detail="${today.id}">詳細</button>`:`<div class="helper">今日の育成ツムは未設定です。</div>`;
+  $("#todayTrainingCard").querySelectorAll("[data-today-detail]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.todayDetail);if(t)openDetail(t)});
+  renderUndo();
   $("#progressRing").style.setProperty("--p",(s.percent*3.6)+"deg");
   $("#homeProgressBar").style.width=s.percent+"%";
   $("#homeOwned").textContent=s.ownedTsums;$("#homeMaxed").textContent=s.maxed;
@@ -148,7 +177,7 @@ function renderCollection(){
   $("#collectionCategoryChips").innerHTML=cats.map(c=>`<button data-collection-category="${esc(c)}" class="${c===collectionCategory?"active":""}">${esc(c)}</button>`).join("");
   $("#collectionCategoryChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{collectionCategory=b.dataset.collectionCategory;renderCollection()});
   let rows=tsums.filter(t=>{
-    const matchesFilter=filter==="all"||(filter==="owned"&&t.owned>0)||(filter==="unowned"&&t.owned===0)||(filter==="max"&&remain(t)===0)||(filter==="image"&&t.image);
+    const matchesFilter=filter==="all"||(filter==="owned"&&t.owned>0)||(filter==="unowned"&&t.owned===0)||(filter==="max"&&remain(t)===0)||(filter==="image"&&t.image)||(filter==="favorite"&&t.favorite);
     return matchesFilter&&(collectionCategory==="すべて"||t.category===collectionCategory)&&(t.name.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
   });
   rows.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
@@ -187,6 +216,7 @@ function renderPlanner(){
         <div><b>${stats.remaining.toLocaleString("ja-JP")}</b><span>残り必要数</span></div>
         <div><b>${stats.coins.toLocaleString("ja-JP")}</b><span>必要コイン</span></div>
       </div>
+      <div class="plan-progress"><i style="width:${stats.found.length?Math.round(stats.maxed/stats.found.length*100):0}%"></i></div>
       ${stats.missing.length?`<p class="helper">未登録：${stats.missing.map(esc).join("、")}</p>`:""}
       ${p.memo?`<p class="helper">${esc(p.memo)}</p>`:""}
     </article>`;
@@ -377,9 +407,17 @@ function previewBox(){
   const {names,found,missing}=parseBox();
   $("#boxPreview").innerHTML=`入力：${names.length}体<br>${found.map(x=>`${esc(x.t.name)} ＋${x.count}`).join("<br>")||"一致するツムなし"}${missing.length?`<br><span style="color:var(--danger)">未登録：${missing.map(esc).join("、")}</span>`:""}`;
 }
-function addHistory(type,detail){history.unshift({type,detail,time:new Date().toISOString()});saveHistory();renderHistory()}
+function addHistory(type,detail,changes=null){history.unshift({type,detail,time:new Date().toISOString(),changes});saveHistory();renderHistory()}
+function restoreHistory(index){
+  const h=history[index];if(!h||!Array.isArray(h.changes))return;
+  for(const c of h.changes){
+    const t=tsums.find(x=>x.id===c.id);if(t&&Number.isFinite(c.owned))t.owned=c.owned;
+  }
+  history.splice(index,1);save();saveHistory();renderAll();renderHistory();toast("履歴の操作を戻しました");
+}
 function renderHistory(){
-  $("#historyList").innerHTML=history.slice(0,15).map(h=>`<div class="history-item"><span>${esc(h.type)}：${esc(h.detail)}</span><span>${new Date(h.time).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join("")||`<div class="helper">入力履歴はありません。</div>`;
+  $("#historyList").innerHTML=history.slice(0,15).map((h,i)=>`<div class="history-item"><span>${esc(h.type)}：${esc(h.detail)}</span><span>${new Date(h.time).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span>${h.changes?`<button data-restore-history="${i}">戻す</button>`:""}</div>`).join("")||`<div class="helper">入力履歴はありません。</div>`;
+  $("#historyList").querySelectorAll("[data-restore-history]").forEach(b=>b.onclick=()=>restoreHistory(Number(b.dataset.restoreHistory)));
 }
 function renderTicketCandidates(){
   const q=$("#ticketSearch").value.trim().toLowerCase();
@@ -411,21 +449,46 @@ $("#previewBoxButton").onclick=previewBox;
 $("#applyBoxButton").onclick=()=>{
   const {found,missing}=parseBox();if(!found.length){alert("登録済みのツム名が見つかりません");return}
   if(missing.length&&!confirm("未登録の名前があります。\n"+missing.join("、")+"\n\n一致したツムだけ反映しますか？"))return;
-  let total=0;const details=[];for(const {t,count} of found){const before=t.owned;t.owned=Math.min(t.required,t.owned+count);const added=t.owned-before;if(added){total+=added;details.push(`${t.name}＋${added}`)}}
+  let total=0;const details=[],changes=[];for(const {t,count} of found){const before=t.owned;t.owned=Math.min(t.required,t.owned+count);const added=t.owned-before;if(added){total+=added;details.push(`${t.name}＋${added}`);changes.push({id:t.id,owned:before})}}
   found.forEach(({t})=>touchRecent(t.id));
-  save();addHistory("BOX",details.join("、"));$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。";renderAll();toast(total+"体分を反映しました");
+  save();addHistory("BOX",details.join("、"),changes);setUndo("直前のBOX入力を取り消す",changes);$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。";renderAll();toast(total+"体分を反映しました");
 };
 $("#ticketSearch").oninput=renderTicketCandidates;
 $("#applyTicketButton").onclick=()=>{
   const t=tsums.find(x=>x.id===ticketSelection);if(!t){alert("対象ツムを選択してください");return}
   const amount=Number($("#ticketAmount").value),before=t.owned;t.owned=Math.min(t.required,t.owned+amount);const added=t.owned-before;
-  touchRecent(t.id);save();addHistory("スキルチケット",`${t.name}＋${added}`);renderAll();toast(`${t.name}に${added}枚反映しました`);
+  const changes=[{id:t.id,owned:before}];
+  touchRecent(t.id);save();addHistory("スキルチケット",`${t.name}＋${added}`,changes);setUndo(`${t.name}へのスキルチケット使用を取り消す`,changes);renderAll();toast(`${t.name}に${added}枚反映しました`);
 };
 $("#clearHistoryButton").onclick=()=>{if(confirm("入力履歴を削除しますか？")){history=[];saveHistory();renderHistory()}};
 $("#trainingHelpButton").onclick=()=>openMessage("育成予定の使い方","一覧でツム名横の「•••」を押し、育成優先度を設定します。\n\n最優先 → 優先 → あとで の順に表示されます。");
 $("#cancelEditButton").onclick=()=>$("#editDialog").close();
 $("#closeMessageButton").onclick=()=>$("#messageDialog").close();
 
+
+
+function renderTodayTrainingCandidates(){
+  const q=$("#todayTrainingSearch").value.trim().toLowerCase();
+  const rows=tsums.filter(t=>!q||t.name.toLowerCase().includes(q)).slice(0,40);
+  $("#todayTrainingCandidates").innerHTML=rows.map(t=>`<div class="candidate"><span>${esc(t.name)}（${t.owned}/${t.required}）</span><button data-today-id="${t.id}" class="${todayTrainingId===t.id?"selected":""}">${todayTrainingId===t.id?"設定中":"選択"}</button></div>`).join("");
+  $("#todayTrainingCandidates").querySelectorAll("[data-today-id]").forEach(b=>b.onclick=()=>{
+    todayTrainingId=b.dataset.todayId;saveToday();renderTodayTrainingCandidates();renderHome();toast("今日の育成ツムを設定しました");
+  });
+}
+$("#changeTodayTrainingButton").onclick=()=>{renderTodayTrainingCandidates();$("#todayTrainingDialog").showModal()};
+$("#todayTrainingSearch").oninput=renderTodayTrainingCandidates;
+$("#closeTodayTrainingButton").onclick=()=>$("#todayTrainingDialog").close();
+$("#clearTodayTrainingButton").onclick=()=>{todayTrainingId="";saveToday();renderHome();$("#todayTrainingDialog").close();toast("設定を解除しました")};
+$("#undoButton").onclick=()=>{
+  if(!undoState||!Array.isArray(undoState.changes))return;
+  for(const c of undoState.changes){
+    const t=tsums.find(x=>x.id===c.id);if(!t)continue;
+    if(Number.isFinite(c.owned))t.owned=c.owned;
+    if(typeof c.favorite==="boolean")t.favorite=c.favorite;
+  }
+  undoState=null;saveUndo();save();renderAll();toast("操作を取り消しました");
+};
+$("#restoreLastHistoryButton").onclick=()=>{if(history.length&&history[0].changes)restoreHistory(0);else toast("戻せる履歴がありません")};
 
 $("#collectionSearch").oninput=renderCollection;
 $("#collectionFilter").onchange=renderCollection;
@@ -474,15 +537,15 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"1.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"1.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;save();saveHistory();saveRecent();savePlans();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;save();saveHistory();saveRecent();savePlans();saveToday();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];save();saveHistory();saveRecent();savePlans();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveToday();saveUndo();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{
