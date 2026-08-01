@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 1.1</title>
+  <title>TsumManager 1.2</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 1.1</p>
+      <p>TsumManager 1.2</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -47,6 +47,17 @@
 
 
 
+
+
+      <article class="panel">
+        <div class="section-title"><h2>スキルマ目前ランキング</h2><button id="openNearRankingButton">一覧で見る</button></div>
+        <div id="nearRankingList" class="ranking-list"></div>
+      </article>
+
+      <article class="panel">
+        <div class="section-title"><h2>必要コイン上位</h2><button id="openCoinRankingButton">一覧で見る</button></div>
+        <div id="coinRankingList" class="ranking-list"></div>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>今日の育成</h2><button id="changeTodayTrainingButton">変更</button></div>
@@ -111,6 +122,7 @@
         <div id="collectionCategoryChips" class="chips"></div>
       </article>
       <div id="collectionGrid" class="collection-grid"></div>
+      <button id="loadMoreCollectionButton" class="load-more-button">さらに表示</button>
     </section>
 
     <section id="listView" class="view" hidden>
@@ -240,6 +252,14 @@
         <h2>表示設定</h2>
         <label class="switch-row"><span>ダークモード</span><input id="darkToggle" type="checkbox"></label>
         <label class="switch-row"><span>一覧をコンパクト表示</span><input id="compactToggle" type="checkbox"></label>
+      </article>
+
+
+      <article class="panel settings-panel">
+        <h2>CSVデータ</h2>
+        <p class="helper">Excelなどで所持数を編集できます。画像はCSVには含まれません。</p>
+        <button id="exportCsvButton">CSVを書き出す</button>
+        <label class="file-button">CSVを読み込む<input id="importCsvInput" type="file" accept=".csv,text/csv"></label>
       </article>
 
       <article class="panel settings-panel">
@@ -419,6 +439,7 @@
   </div>
 </dialog>
 
+<button id="scrollTopButton" class="scroll-top-button" aria-label="ページ上部へ">↑</button>
 <div id="toast"></div>
 <script src="./tsums-data.js"></script>
 <script src="./app.js"></script>

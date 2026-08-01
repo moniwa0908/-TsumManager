@@ -183,3 +183,14 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
   .today-training-card .avatar{width:52px;height:52px}
   .today-training-card button{grid-column:1/-1}
 }
+
+.ranking-list{display:flex;flex-direction:column;gap:7px}
+.ranking-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px;border-radius:13px;background:var(--bg)}
+.ranking-item>span:first-child{width:28px;height:28px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:900;font-size:12px}
+.ranking-item strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ranking-item small{display:block;color:var(--muted);margin-top:2px}
+.ranking-item button{border:0;background:var(--accent);color:#fff;border-radius:9px;padding:7px 9px;font-weight:800}
+.load-more-button{display:block;width:100%;margin:12px 0 4px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:12px;font-weight:800}
+.load-more-button[hidden]{display:none!important}
+.scroll-top-button{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:25;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--accent);font-size:22px;font-weight:900;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s}
+.scroll-top-button.show{opacity:1;pointer-events:auto}
