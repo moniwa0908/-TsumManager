@@ -1,6 +1,6 @@
 
 const KEYS=["tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY=KEYS[0], HISTORY_KEY="tsumManagerHistoryV5";
+const KEY="tsumManagerDataV6", HISTORY_KEY="tsumManagerHistoryV6", RECENT_KEY="tsumManagerRecentV6";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -26,10 +26,16 @@ function loadData(){
 }
 let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
+let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
 let activeView="home",category="すべて",status="all",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",editingImage="",ticketSelection="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
+function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
+function touchRecent(id){
+  recent=[id,...recent.filter(x=>x!==id)].slice(0,20);
+  saveRecent();
+}
 save();
 const remain=t=>Math.max(0,t.required-t.owned);
 const pct=t=>Math.min(100,Math.round(t.owned/t.required*100));
@@ -92,7 +98,8 @@ function handleCardAction(action,id){
   if(action==="plus")t.owned=Math.min(t.required,t.owned+increment);
   if(action==="minus")t.owned=Math.max(0,t.owned-increment);
   if(action==="favorite")t.favorite=!t.favorite;
-  if(action==="edit"){openEdit(t);return}
+  if(action==="edit"){touchRecent(t.id);openEdit(t);return}
+  touchRecent(t.id);
   save();renderAll();
 }
 function summary(){
@@ -115,6 +122,8 @@ function renderHome(){
   const near=tsums.filter(t=>remain(t)>0&&remain(t)<=5).sort((a,b)=>remain(a)-remain(b));
   const priorities=tsums.filter(t=>t.priority>0&&remain(t)>0).sort((a,b)=>a.priority-b.priority||remain(a)-remain(b));
   $("#nearCount").textContent=near.length+"体";$("#unownedCount").textContent=tsums.filter(t=>t.owned===0).length+"体";
+  const recentTsums=recent.map(id=>tsums.find(t=>t.id===id)).filter(Boolean).slice(0,5);
+  $("#recentTsumList").innerHTML=recentTsums.map(miniHtml).join("")||`<div class="helper">最近使ったツムはありません。</div>`;
   $("#homePriorityList").innerHTML=priorities.slice(0,5).map(miniHtml).join("")||`<div class="helper">育成予定は未登録です。</div>`;
   $("#homeNearList").innerHTML=near.slice(0,5).map(miniHtml).join("")||`<div class="helper">残り5体以内のツムはありません。</div>`;
   document.querySelectorAll(".mini-item button").forEach(b=>b.onclick=()=>{showView("list");$("#searchInput").value=b.dataset.name;renderList()});
@@ -181,7 +190,26 @@ function openEdit(t=null){
   editingImage=t?.image||"";renderImagePreview();$("#deleteButton").style.display=t?"":"none";$("#editDialog").showModal();
 }
 function renderImagePreview(){$("#imagePreview").innerHTML=editingImage?`<img src="${editingImage}" alt="">`:""}
-$("#editImageInput").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{editingImage=r.result;renderImagePreview()};r.readAsDataURL(f)};
+$("#editImageInput").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(!f.type.startsWith("image/")){alert("画像ファイルを選択してください");return}
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const size=320,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+      canvas.width=size;canvas.height=size;
+      const scale=Math.max(size/img.width,size/img.height);
+      const w=img.width*scale,h=img.height*scale;
+      ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+      editingImage=canvas.toDataURL("image/jpeg",0.82);
+      renderImagePreview();
+      toast("画像を登録しました");
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(f);
+};
 $("#editForm").onsubmit=e=>{
   e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,priority:$("#editPriority").value,image:editingImage,memo:$("#editMemo").value});
   if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
@@ -222,28 +250,53 @@ $("#applyBoxButton").onclick=()=>{
   const {found,missing}=parseBox();if(!found.length){alert("登録済みのツム名が見つかりません");return}
   if(missing.length&&!confirm("未登録の名前があります。\n"+missing.join("、")+"\n\n一致したツムだけ反映しますか？"))return;
   let total=0;const details=[];for(const {t,count} of found){const before=t.owned;t.owned=Math.min(t.required,t.owned+count);const added=t.owned-before;if(added){total+=added;details.push(`${t.name}＋${added}`)}}
+  found.forEach(({t})=>touchRecent(t.id));
   save();addHistory("BOX",details.join("、"));$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。";renderAll();toast(total+"体分を反映しました");
 };
 $("#ticketSearch").oninput=renderTicketCandidates;
 $("#applyTicketButton").onclick=()=>{
   const t=tsums.find(x=>x.id===ticketSelection);if(!t){alert("対象ツムを選択してください");return}
   const amount=Number($("#ticketAmount").value),before=t.owned;t.owned=Math.min(t.required,t.owned+amount);const added=t.owned-before;
-  save();addHistory("スキルチケット",`${t.name}＋${added}`);renderAll();toast(`${t.name}に${added}枚反映しました`);
+  touchRecent(t.id);save();addHistory("スキルチケット",`${t.name}＋${added}`);renderAll();toast(`${t.name}に${added}枚反映しました`);
 };
 $("#clearHistoryButton").onclick=()=>{if(confirm("入力履歴を削除しますか？")){history=[];saveHistory();renderHistory()}};
 $("#trainingHelpButton").onclick=()=>openMessage("育成予定の使い方","一覧でツム名横の「•••」を押し、育成優先度を設定します。\n\n最優先 → 優先 → あとで の順に表示されます。");
 $("#cancelEditButton").onclick=()=>$("#editDialog").close();
 $("#closeMessageButton").onclick=()=>$("#messageDialog").close();
+
+$("#removeImageButton").onclick=()=>{
+  if(!editingImage){toast("画像は登録されていません");return}
+  editingImage="";
+  renderImagePreview();
+  toast("保存すると画像が削除されます");
+};
+function renderImageManager(){
+  const rows=tsums.filter(t=>t.image);
+  $("#imageManagerGrid").innerHTML=rows.length?rows.map(t=>`
+    <div class="image-manager-item">
+      <img src="${t.image}" alt="">
+      <strong>${esc(t.name)}</strong>
+      <button data-remove-image="${t.id}">画像削除</button>
+    </div>`).join(""):`<div class="image-manager-empty">登録済み画像はありません。</div>`;
+  $("#imageManagerGrid").querySelectorAll("[data-remove-image]").forEach(b=>b.onclick=()=>{
+    const t=tsums.find(x=>x.id===b.dataset.removeImage);if(!t)return;
+    if(confirm(`${t.name}の画像を削除しますか？`)){t.image="";save();renderImageManager();renderAll();toast("画像を削除しました")}
+  });
+}
+$("#openImageManagerButton").onclick=()=>{renderImageManager();$("#imageManagerDialog").showModal()};
+$("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
+$("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
+
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:5,exportedAt:new Date().toISOString(),tsums,history},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:6,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;save();saveHistory();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;save();saveHistory();saveRecent();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];save();saveHistory();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];save();saveHistory();saveRecent();renderAll();toast("初期化しました")}};
 const dark=localStorage.getItem("tm-dark")==="1";document.documentElement.classList.toggle("dark",dark);$("#darkToggle").checked=dark;
 $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e.target.checked);localStorage.setItem("tm-dark",e.target.checked?"1":"0")};
 $("#compactToggle").checked=compact;$("#compactToggle").onchange=e=>{compact=e.target.checked;localStorage.setItem("tm-compact",compact?"1":"0");if(activeView==="list")renderList()};

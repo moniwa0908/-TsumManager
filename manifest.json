@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager Ver.5",
+  "name": "TsumManager Ver.6",
   "short_name": "ツム管理",
-  "description": "ツムツムの所持数・スキルマ・育成予定を管理する個人用Webアプリ",
+  "description": "ツムツムの所持数・画像・育成予定を管理する個人用Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

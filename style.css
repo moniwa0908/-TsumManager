@@ -44,3 +44,14 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 #toast{position:fixed;z-index:99;left:50%;bottom:calc(env(safe-area-inset-bottom) + 82px);transform:translateX(-50%);background:#111827;color:#fff;padding:10px 14px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;font-size:13px}#toast.show{opacity:1}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero-stats{grid-template-columns:1fr 1fr}.search-row{grid-template-columns:1fr 116px}.tsum-card{grid-template-columns:50px minmax(0,1fr)}.avatar{width:50px;height:50px}.counter{grid-column:1/-1;justify-content:flex-end}.tsum-list.compact{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.quick-card{padding:12px}.ticket-controls{grid-template-columns:100px 1fr}}
+
+.image-manager-dialog{padding:18px;max-height:82vh;overflow:auto}
+.image-manager-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.image-manager-item{border:1px solid var(--line);background:var(--bg);border-radius:15px;padding:8px;text-align:center}
+.image-manager-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--card)}
+.image-manager-item strong{display:block;font-size:12px;margin:6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.image-manager-item button{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:10px;padding:7px;width:100%;font-weight:800}
+.image-manager-empty{grid-column:1/-1;color:var(--muted);text-align:center;padding:24px}
+.image-preview{display:flex;align-items:center;gap:10px}
+.image-preview img{box-shadow:var(--shadow)}
+@media(max-width:560px){.image-manager-grid{grid-template-columns:repeat(2,1fr)}}

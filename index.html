@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager Ver.5</title>
+  <title>TsumManager Ver.6</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager Ver.5</p>
+      <p>TsumManager Ver.6</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -44,6 +44,12 @@
         <button data-home-filter="near" class="quick-card"><span>✨</span><b>スキルマ目前</b><small id="nearCount">0体</small></button>
         <button data-home-filter="unowned" class="quick-card"><span>🔒</span><b>未所持</b><small id="unownedCount">0体</small></button>
       </div>
+
+
+      <article class="panel">
+        <div class="section-title"><h2>最近使ったツム</h2><button id="clearRecentButton">履歴削除</button></div>
+        <div id="recentTsumList" class="mini-list"></div>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>育成優先</h2><button data-open-view="training">すべて見る</button></div>
@@ -156,6 +162,13 @@
         <button id="resetButton" class="danger-button">全データを初期化</button>
       </article>
 
+
+      <article class="panel settings-panel">
+        <h2>画像管理</h2>
+        <p class="helper">登録済み画像の確認・削除ができます。画像はSafari内に保存されます。</p>
+        <button id="openImageManagerButton">登録画像を管理</button>
+      </article>
+
       <article class="panel">
         <h2>アプリ情報</h2>
         <dl class="info-list">
@@ -199,6 +212,7 @@
     </div>
     <label>ツム画像<input id="editImageInput" type="file" accept="image/*"></label>
     <div id="imagePreview" class="image-preview"></div>
+    <button type="button" id="removeImageButton" class="secondary-button">画像を削除</button>
     <label>メモ<textarea id="editMemo"></textarea></label>
     <div class="dialog-actions">
       <button type="button" id="deleteButton" class="danger-button">削除</button>
@@ -206,6 +220,15 @@
       <button type="submit" class="primary-button">保存</button>
     </div>
   </form>
+</dialog>
+
+
+<dialog id="imageManagerDialog">
+  <div class="image-manager-dialog">
+    <div class="section-title"><h2>登録画像一覧</h2><button id="closeImageManagerButton">閉じる</button></div>
+    <p class="helper">画像を削除しても、所持数やメモは消えません。</p>
+    <div id="imageManagerGrid" class="image-manager-grid"></div>
+  </div>
 </dialog>
 
 <dialog id="messageDialog">
