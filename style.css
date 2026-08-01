@@ -279,3 +279,7 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 @media(max-width:560px){
   .monthly-report{grid-template-columns:1fr 1fr}
 }
+
+.release-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.release-label{display:inline-block;margin-top:4px;color:var(--muted);font-size:11px}
+@media(max-width:560px){.release-filter-row{grid-template-columns:1fr 1fr}}

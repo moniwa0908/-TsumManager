@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 5.0</title>
+  <title>TsumManager 5.2</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 5.0</p>
+      <p>TsumManager 5.2</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -163,11 +163,17 @@
             <option value="progress">進捗が高い順</option>
             <option value="owned">所持数が多い順</option>
             <option value="favorite">お気に入り順</option>
+            <option value="releaseOld">リリース順（古い順）</option>
+            <option value="releaseNew">リリース順（新しい順）</option>
           </select>
         </div>
         <div id="categoryChips" class="chips"></div>
         <div id="statusChips" class="chips secondary"></div>
         <div id="tagChips" class="chips tertiary"></div>
+        <div class="release-filter-row">
+          <select id="releaseYearFilter"><option value="all">登場年：すべて</option></select>
+          <select id="releaseMonthFilter"><option value="all">登場月：すべて</option></select>
+        </div>
       </article>
 
       <div class="list-toolbar">
@@ -410,7 +416,8 @@
           <div><dt>収録ツム</dt><dd id="masterCount">0体</dd></div>
           <div><dt>保存方式</dt><dd>Safari端末内保存</dd></div>
           <div><dt>オフライン</dt><dd>対応</dd></div>
-          <div><dt>データ引継ぎ</dt><dd>Ver.1〜4対応</dd></div>
+          <div><dt>登場年月登録</dt><dd id="releaseDateCoverage">0/0体</dd></div>
+          <div><dt>データ引継ぎ</dt><dd>Ver.1〜5.1対応</dd></div>
         </dl>
       </article>
     </section>
@@ -436,6 +443,7 @@
     <div class="form-grid">
       <label>カテゴリ<input id="editCategory" required></label>
       <label>スキルマ必要数<input id="editRequired" type="number" min="1" max="999" required></label>
+      <label>登場年月<input id="editReleaseDate" type="month"></label>
     </div>
     <div class="form-grid">
       <label>現在数<input id="editOwned" type="number" min="0" max="999" required></label>

@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 5.0",
+  "name": "TsumManager 5.2",
   "short_name": "ツム管理",
-  "description": "ツムツムの図鑑・今日のタスク・育成アシスタント・月次成長を管理する個人用Webアプリ",
+  "description": "登場年月による並び替え・絞り込みに対応した個人用ツム管理Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
