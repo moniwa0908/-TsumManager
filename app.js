@@ -1,7 +1,27 @@
 
-const KEYS=["tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV602", HISTORY_KEY="tsumManagerHistoryV602", RECENT_KEY="tsumManagerRecentV602", PLAN_KEY="tsumManagerPlansV602", TODAY_KEY="tsumManagerTodayV602", UNDO_KEY="tsumManagerUndoV602", GOAL_KEY="tsumManagerGoalsV602", TICKET_STOCK_KEY="tsumManagerTicketStockV602", SNAPSHOT_KEY="tsumManagerSnapshotsV602", TASK_KEY="tsumManagerTasksV602", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV602";
+const KEYS=["tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV61", HISTORY_KEY="tsumManagerHistoryV61", RECENT_KEY="tsumManagerRecentV61", PLAN_KEY="tsumManagerPlansV61", TODAY_KEY="tsumManagerTodayV61", UNDO_KEY="tsumManagerUndoV61", GOAL_KEY="tsumManagerGoalsV61", TICKET_STOCK_KEY="tsumManagerTicketStockV61", SNAPSHOT_KEY="tsumManagerSnapshotsV61", TASK_KEY="tsumManagerTasksV61", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV61";
 const $=q=>document.querySelector(q);
+
+// iPhone Safariの意図しない画面拡大を防止する。
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
+
+let lastTouchEnd=0;
+document.addEventListener("touchend",e=>{
+  const now=Date.now();
+  if(now-lastTouchEnd<=300)e.preventDefault();
+  lastTouchEnd=now;
+},{passive:false});
+
+function stabilizeMobileViewport(){
+  document.documentElement.style.setProperty("--app-vw",`${document.documentElement.clientWidth}px`);
+}
+window.addEventListener("resize",stabilizeMobileViewport,{passive:true});
+window.addEventListener("orientationchange",()=>setTimeout(stabilizeMobileViewport,150),{passive:true});
+stabilizeMobileViewport();
+
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
   id:t.id||crypto.randomUUID(),name:String(t.name||"名称未設定"),category:String(t.category||"未分類"),
@@ -1030,7 +1050,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

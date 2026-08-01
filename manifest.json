@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.0.2",
+  "name": "TsumManager 6.1",
   "short_name": "ツム管理",
-  "description": "画像名が完全一致しない場合に近いツム候補から選択して登録できる個人用ツム管理Webアプリ",
+  "description": "iPhone Safariの自動ズームと表示崩れを防止し、スマートフォン表示を最適化したツム管理Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
