@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.1.1",
+  "name": "TsumManager 6.2",
   "short_name": "ツム管理",
-  "description": "ラビットをハピネスツムとして追加したデータ修正版",
+  "description": "画像を含む完全バックアップと復元に対応した個人用ツム管理Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV611", HISTORY_KEY="tsumManagerHistoryV611", RECENT_KEY="tsumManagerRecentV611", PLAN_KEY="tsumManagerPlansV611", TODAY_KEY="tsumManagerTodayV611", UNDO_KEY="tsumManagerUndoV611", GOAL_KEY="tsumManagerGoalsV611", TICKET_STOCK_KEY="tsumManagerTicketStockV611", SNAPSHOT_KEY="tsumManagerSnapshotsV611", TASK_KEY="tsumManagerTasksV611", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV611";
+const KEYS=["tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV62", HISTORY_KEY="tsumManagerHistoryV62", RECENT_KEY="tsumManagerRecentV62", PLAN_KEY="tsumManagerPlansV62", TODAY_KEY="tsumManagerTodayV62", UNDO_KEY="tsumManagerUndoV62", GOAL_KEY="tsumManagerGoalsV62", TICKET_STOCK_KEY="tsumManagerTicketStockV62", SNAPSHOT_KEY="tsumManagerSnapshotsV62", TASK_KEY="tsumManagerTasksV62", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV62", BACKUP_META_KEY="tsumManagerBackupMetaV62";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -615,6 +615,9 @@ function renderSettings(){
   $("#seriesCoverage").textContent=`${seriesCount}/${tsums.length}体`;
   $("#masterDataStatus").innerHTML=`<div><b>${dated}</b><span>年月登録</span></div><div><b>${seriesCount}</b><span>シリーズ登録</span></div><div><b>${imageCount}</b><span>画像登録</span></div>`;
   renderUndoHistory();
+
+  renderBackupSummary();
+  renderStorageHealth();
 }
 function renderAll(){
   renderHome();
@@ -1050,7 +1053,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.1.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1165,10 +1168,158 @@ $("#openNearRankingButton").onclick=()=>{status="near";showView("list")};
 $("#openCoinRankingButton").onclick=()=>{$("#sortSelect").value="remain";status="all";showView("list")};
 window.addEventListener("scroll",()=>$("#scrollTopButton").classList.toggle("show",scrollY>500),{passive:true});
 $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
+
+function buildFullBackup(){
+  return {
+    app:"TsumManager",
+    version:"6.2",
+    schemaVersion:1,
+    exportedAt:new Date().toISOString(),
+    device:{
+      userAgent:navigator.userAgent,
+      language:navigator.language
+    },
+    tsums,
+    history,
+    recent,
+    plans,
+    todayTrainingId,
+    goals,
+    ticketStock,
+    snapshots,
+    dailyTasks,
+    undoHistory,
+    settings:{
+      category,
+      status,
+      activeTag,
+      releaseYearFilter,
+      releaseMonthFilter,
+      seriesFilter,
+      collectionCategory,
+      rankingType,
+      rankingOwnedOnly,
+      increment
+    }
+  };
+}
+function downloadJsonFile(data,fileName){
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:"application/json;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=fileName;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  return new Blob([json]).size;
+}
+function backupFileName(prefix="TsumManager_Backup"){
+  const d=new Date();
+  const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
+  return `${prefix}_${stamp}.json`;
+}
+function exportFullBackup(prefix="TsumManager_Backup"){
+  const data=buildFullBackup();
+  const size=downloadJsonFile(data,backupFileName(prefix));
+  const meta={time:new Date().toISOString(),size,images:tsums.filter(t=>t.image).length,version:"6.2"};
+  localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
+  renderBackupSummary();
+  $("#backupStatus").innerHTML=`バックアップを作成しました。<br>画像：${meta.images}体<br>ファイルサイズ：約${formatBytes(size)}`;
+  return meta;
+}
+function formatBytes(bytes){
+  if(bytes<1024)return `${bytes} B`;
+  if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+function validateBackup(data){
+  if(!data||data.app!=="TsumManager")throw new Error("TsumManagerのバックアップではありません");
+  if(!Array.isArray(data.tsums))throw new Error("ツムデータがありません");
+  if(data.tsums.length<1)throw new Error("ツムデータが空です");
+  return true;
+}
+function restoreFullBackup(data){
+  validateBackup(data);
+  tsums=mergeMaster(data.tsums);
+  history=Array.isArray(data.history)?data.history:[];
+  recent=Array.isArray(data.recent)?data.recent:[];
+  plans=Array.isArray(data.plans)?data.plans:[];
+  todayTrainingId=typeof data.todayTrainingId==="string"?data.todayTrainingId:"";
+  goals=Array.isArray(data.goals)?data.goals:[];
+  ticketStock=Number.isFinite(data.ticketStock)?Math.max(0,data.ticketStock):0;
+  snapshots=Array.isArray(data.snapshots)?data.snapshots:[];
+  dailyTasks=Array.isArray(data.dailyTasks)?data.dailyTasks:[];
+  undoHistory=Array.isArray(data.undoHistory)?data.undoHistory:[];
+  if(data.settings){
+    category=data.settings.category||"すべて";
+    status=data.settings.status||"all";
+    activeTag=data.settings.activeTag||"すべて";
+    releaseYearFilter=data.settings.releaseYearFilter||"all";
+    releaseMonthFilter=data.settings.releaseMonthFilter||"all";
+    seriesFilter=data.settings.seriesFilter||"all";
+    collectionCategory=data.settings.collectionCategory||"すべて";
+    rankingType=data.settings.rankingType||"coin";
+    rankingOwnedOnly=data.settings.rankingOwnedOnly!==false;
+    increment=Number(data.settings.increment)||1;
+  }
+  save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();
+  renderAll();renderSettings();
+}
+function renderBackupSummary(){
+  const images=tsums.filter(t=>t.image).length;
+  let imageBytes=0;
+  for(const t of tsums)if(t.image)imageBytes+=t.image.length;
+  let meta=null;
+  try{meta=JSON.parse(localStorage.getItem(BACKUP_META_KEY)||"null")}catch(e){}
+  $("#backupSummary").innerHTML=`<div><b>${tsums.length}</b><span>ツム数</span></div><div><b>${images}</b><span>画像登録</span></div><div><b>${goals.length}</b><span>育成目標</span></div><div><b>${formatBytes(imageBytes)}</b><span>画像容量目安</span></div>`;
+  if(meta){
+    $("#backupStatus").innerHTML=`最終バックアップ：${new Date(meta.time).toLocaleString("ja-JP")}<br>画像：${meta.images}体／約${formatBytes(meta.size)}`;
+  }
+}
+function renderStorageHealth(){
+  const images=tsums.filter(t=>t.image).length;
+  let approx=0;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      approx+=(key?.length||0)+(localStorage.getItem(key)?.length||0);
+    }
+  }catch(e){}
+  const lastBackup=localStorage.getItem(BACKUP_META_KEY);
+  $("#storageHealth").innerHTML=`<div><b>ブラウザ内保存</b><span>推定使用量：約${formatBytes(approx*2)}</span></div><div><b>画像登録 ${images}体</b><span>Safariの履歴・Webサイトデータを消去すると失われる可能性があります。</span></div><div><b>${lastBackup?"バックアップ作成済み":"バックアップ未作成"}</b><span>${lastBackup?"更新前にも再作成してください。":"今すぐ完全バックアップを作成してください。"}</span></div>`;
+}
+
 function csvEscape(value){
   const text=String(value??"");
   return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
 }
+
+$("#exportFullBackupButton").onclick=()=>exportFullBackup();
+$("#quickBackupButton").onclick=()=>exportFullBackup("TsumManager_UpdateBefore");
+$("#checkStorageButton").onclick=()=>{renderStorageHealth();toast("保存状態を確認しました")};
+$("#importFullBackupInput").onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(String(reader.result));
+      validateBackup(data);
+      const imageCount=data.tsums.filter(t=>t.image).length;
+      const message=`バックアップを読み込みます。\n\nツム数：${data.tsums.length}体\n画像：${imageCount}体\n作成日時：${data.exportedAt?new Date(data.exportedAt).toLocaleString("ja-JP"):"不明"}\n\n現在のデータは置き換えられます。`;
+      if(!confirm(message))return;
+      if($("#autoBackupBeforeImport").checked)exportFullBackup("TsumManager_BeforeRestore");
+      restoreFullBackup(data);
+      $("#backupStatus").innerHTML=`バックアップを復元しました。<br>ツム：${data.tsums.length}体／画像：${imageCount}体`;
+      toast("バックアップを復元しました");
+    }catch(err){
+      alert("バックアップを読み込めませんでした："+err.message);
+    }finally{
+      e.target.value="";
+    }
+  };
+  reader.readAsText(file);
+};
+
 $("#exportCsvButton").onclick=()=>{
   const header=["name","category","owned","required","favorite","priority","tags","coinRating","scoreRating","easeRating","missionTags","memo"];
   const rows=tsums.map(t=>[

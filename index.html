@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 6.1.1</title>
+  <title>TsumManager 6.2</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 6.1.1</p>
+      <p>TsumManager 6.2</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -375,6 +375,20 @@
         <p class="helper">記録はバックアップにも含まれます。</p>
         <button id="deleteLastSnapshotButton">最新の進捗記録を削除</button>
         <button id="clearSnapshotsButton" class="danger-button">進捗記録をすべて削除</button>
+      </article>
+
+
+      <article class="panel settings-panel backup-panel">
+        <h2>完全バックアップ</h2>
+        <p class="helper">所持数・画像・お気に入り・メモ・タグ・評価・目標・履歴などを、1つのJSONファイルに保存します。</p>
+        <div id="backupSummary" class="backup-summary"></div>
+        <button id="exportFullBackupButton" class="primary-button">画像込みバックアップを書き出す</button>
+        <label class="file-button">バックアップを読み込む
+          <input id="importFullBackupInput" type="file" accept=".json,application/json">
+        </label>
+        <label class="switch-row"><span>読込前に現在のデータを自動バックアップ</span><input id="autoBackupBeforeImport" type="checkbox" checked></label>
+        <button id="quickBackupButton">更新前クイックバックアップ</button>
+        <div id="backupStatus" class="result-box">まだバックアップは作成されていません。</div>
       </article>
 
       <article class="panel settings-panel">
