@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 7.3 Plus & Rewards</title>
+  <title>TsumManager 8.0 Safe Storage</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 7.3 Plus & Rewards</p>
+      <p>TsumManager 8.0 Safe Storage</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -379,6 +379,17 @@
 
 
 
+      
+      <article class="panel settings-panel safe-storage-panel">
+        <h2>安全保存システム</h2>
+        <div id="safeStorageStatus" class="result-box">保存状態を確認しています。</div>
+        <p class="helper">
+          所持数・スキル進捗・メモは固定のユーザー保存領域へ、
+          画像はIndexedDBへ保存します。今後のアプリ更新ではマスターデータだけを更新します。
+        </p>
+        <button type="button" id="saveUserDataNowButton">現在の入力データを保存</button>
+      </article>
+
       <article class="panel settings-panel rescue-panel">
         <h2>データ復旧モード</h2>
         <p class="helper">過去の保存領域を比較し、画像・所持数などの入力が最も多いデータを自動で読み込みます。Safariの履歴やWebサイトデータは消去しないでください。</p>
@@ -390,7 +401,7 @@
         <h2>完全バックアップ</h2>
         <p class="helper">所持数・画像・お気に入り・メモ・タグ・評価・目標・履歴などを、1つのJSONファイルに保存します。</p>
         <div id="backupSummary" class="backup-summary"></div>
-        <button type="button" id="exportFullBackupButton" class="primary-button">画像込みバックアップを書き出す</button>
+        <button type="button" id="exportFullBackupButton" class="primary-button">完全バックアップ（画像込み）を書き出す</button>
         <label class="file-button">バックアップを読み込む
           <input id="importFullBackupInput" type="file" accept=".json,application/json">
         </label>
@@ -410,8 +421,8 @@
 
       <article class="panel settings-panel">
         <h2>データ管理</h2>
-        <button id="exportButton">バックアップを書き出す</button>
-        <label class="file-button">バックアップを読み込む<input id="importInput" type="file" accept=".json,application/json"></label>
+        <p class="helper">所持数・スキル進捗・メモなどだけを保存します。画像は含みません。</p><button type="button" id="exportButton">軽量バックアップ（画像なし）を書き出す</button>
+        <label class="file-button">軽量バックアップを読み込む<input id="importInput" type="file" accept=".json,application/json"></label>
         <button id="mergeMasterButton">収録ツムを再統合</button>
         <button id="resetButton" class="danger-button">全データを初期化</button>
       </article>

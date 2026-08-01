@@ -1,6 +1,20 @@
 
 const KEYS=["tsumManagerDataV634", "tsumManagerDataV633", "tsumManagerDataV632", "tsumManagerDataV631", "tsumManagerDataV63", "tsumManagerDataV62", "tsumManagerDataV611", "tsumManagerDataV61", "tsumManagerDataV602", "tsumManagerDataV601", "tsumManagerDataV60", "tsumManagerDataV53", "tsumManagerDataV521", "tsumManagerDataV52", "tsumManagerDataV51", "tsumManagerDataV50", "tsumManagerDataV40", "tsumManagerDataV30", "tsumManagerDataV20", "tsumManagerDataV12", "tsumManagerDataV11", "tsumManagerDataV10", "tsumManagerDataV9", "tsumManagerDataV8", "tsumManagerDataV7", "tsumManagerDataV6", "tsumManagerDataV5", "tsumManagerDataV4", "tsumManagerDataV3", "tsumManagerDataV2", "tsumManagerDataV1"];
-const KEY="tsumManagerDataV633", HISTORY_KEY="tsumManagerHistoryV633", RECENT_KEY="tsumManagerRecentV633", PLAN_KEY="tsumManagerPlansV633", TODAY_KEY="tsumManagerTodayV633", UNDO_KEY="tsumManagerUndoV633", GOAL_KEY="tsumManagerGoalsV633", TICKET_STOCK_KEY="tsumManagerTicketStockV633", SNAPSHOT_KEY="tsumManagerSnapshotsV633", TASK_KEY="tsumManagerTasksV633", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV633", BACKUP_META_KEY="tsumManagerBackupMetaV633";
+const KEY="tm-user-data-stable-v1",
+  HISTORY_KEY="tm-history-stable-v1",
+  RECENT_KEY="tm-recent-stable-v1",
+  PLAN_KEY="tm-plans-stable-v1",
+  TODAY_KEY="tm-today-stable-v1",
+  UNDO_KEY="tm-undo-stable-v1",
+  GOAL_KEY="tm-goals-stable-v1",
+  TICKET_STOCK_KEY="tm-ticket-stock-stable-v1",
+  SNAPSHOT_KEY="tm-snapshots-stable-v1",
+  TASK_KEY="tm-tasks-stable-v1",
+  UNDO_HISTORY_KEY="tm-undo-history-stable-v1",
+  BACKUP_META_KEY="tm-backup-meta-stable-v1",
+  IMAGE_DB_NAME="TsumManagerUserStorage",
+  IMAGE_DB_VERSION=1,
+  IMAGE_STORE_NAME="images";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -33,34 +47,95 @@ const norm=t=>({
   skillGrowthVerified:!!t.skillGrowthVerified,skillGrowthSource:String(t.skillGrowthSource||"")
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
-function mergeMaster(existing){
-  const oldMap=new Map(existing.map(x=>[x.name,norm(x)]));
-  const merged=[];
-  for(const m of master()){
-    const old=oldMap.get(m.name);
-    if(old){
-      merged.push(norm({
-        ...m,
-        ...old,
-        required:m.required,
-        requiredVerified:m.requiredVerified,
-        requiredSource:m.requiredSource,
-        skillGrowth:m.skillGrowth,
-        maxSkillLevel:m.maxSkillLevel,
-        skillGrowthVerified:m.skillGrowthVerified,
-        skillGrowthSource:m.skillGrowthSource,
-        owned:Math.min(Number(old.owned||0),Number(m.required||36)),
-        releaseDate:old.releaseDate||m.releaseDate,
-        releaseYear:old.releaseYear||m.releaseYear,
-        releaseOrder:old.releaseOrder||m.releaseOrder
-      }));
-      oldMap.delete(m.name);
-    }else{
-      merged.push(m);
+const USER_EDIT_FIELDS=[
+  "owned","favorite","memo","priority","tags",
+  "coinRating","scoreRating","easeRating","missionTags"
+];
+let legacyRecoveredRows=[];
+let recoveredStorageKey="";
+
+function isMasterTsum(t){
+  return window.TSUM_MASTER_DATA.some(m=>m.id===t.id||m.name===t.name);
+}
+function userRecordFromTsum(t){
+  const record={id:t.id,name:t.name};
+  for(const field of USER_EDIT_FIELDS){
+    const value=t[field];
+    if(Array.isArray(value)){
+      if(value.length)record[field]=value;
+    }else if(value!==0&&value!==false&&value!==""&&value!=null){
+      record[field]=value;
+    }else if(field==="owned"&&Number(value)>0){
+      record[field]=Number(value);
     }
   }
-  for(const old of oldMap.values())merged.push(old);
-  return merged;
+  if(!isMasterTsum(t)){
+    record.customMaster={
+      id:t.id,name:t.name,category:t.category,required:t.required,
+      releaseYear:t.releaseYear,releaseDate:t.releaseDate,
+      releaseOrder:t.releaseOrder,series:t.series,
+      skillGrowth:t.skillGrowth,maxSkillLevel:t.maxSkillLevel,
+      requiredVerified:t.requiredVerified,requiredSource:t.requiredSource,
+      skillGrowthVerified:t.skillGrowthVerified,skillGrowthSource:t.skillGrowthSource
+    };
+  }
+  return record;
+}
+function hasMeaningfulUserData(record){
+  return !!record.customMaster ||
+    Number(record.owned||0)>0 ||
+    !!record.favorite ||
+    !!record.memo ||
+    Number(record.priority||0)>0 ||
+    (record.tags?.length||0)>0 ||
+    Number(record.coinRating||0)>0 ||
+    Number(record.scoreRating||0)>0 ||
+    Number(record.easeRating||0)>0 ||
+    (record.missionTags?.length||0)>0;
+}
+function buildStableUserStore(){
+  return {
+    schemaVersion:1,
+    updatedAt:new Date().toISOString(),
+    records:tsums.map(userRecordFromTsum).filter(hasMeaningfulUserData)
+  };
+}
+function applyUserRecord(base,record){
+  const merged={...base};
+  for(const field of USER_EDIT_FIELDS){
+    if(Object.prototype.hasOwnProperty.call(record,field)){
+      merged[field]=record[field];
+    }
+  }
+  merged.owned=Math.max(0,Math.min(Number(merged.owned||0),Number(base.required||1)));
+  return norm(merged);
+}
+function mergeUserStore(store){
+  const records=Array.isArray(store?.records)?store.records:[];
+  const byId=new Map(records.filter(r=>r.id).map(r=>[r.id,r]));
+  const byName=new Map(records.filter(r=>r.name).map(r=>[r.name,r]));
+  const result=master().map(m=>{
+    const record=byId.get(m.id)||byName.get(m.name);
+    return record?applyUserRecord(m,record):m;
+  });
+  const masterIds=new Set(result.map(t=>t.id));
+  const masterNames=new Set(result.map(t=>t.name));
+  for(const record of records){
+    if(record.customMaster&&!masterIds.has(record.customMaster.id)&&!masterNames.has(record.customMaster.name)){
+      result.push(applyUserRecord(norm(record.customMaster),record));
+    }
+  }
+  return result;
+}
+function mergeMaster(existing){
+  const records=(Array.isArray(existing)?existing:[]).map(t=>{
+    const record=userRecordFromTsum(norm(t));
+    if(!window.TSUM_MASTER_DATA.some(m=>m.id===t.id||m.name===t.name)){
+      record.customMaster={...norm(t),image:""};
+    }
+    return record;
+  });
+  return mergeUserStore({schemaVersion:1,records});
 }
 function dataRecoveryScore(rows){
   if(!Array.isArray(rows)||!rows.length)return -1;
@@ -75,48 +150,193 @@ function dataRecoveryScore(rows){
   // 画像を最重要、次に所持数、その後の個人入力を評価する。
   return images*1000000+owned*1000+favorites*100+memos*10+tags+rows.length;
 }
-let recoveredStorageKey="";
 function loadData(){
+  try{
+    const stable=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(stable&&Array.isArray(stable.records)){
+      recoveredStorageKey=KEY;
+      return mergeUserStore(stable);
+    }
+  }catch(e){}
+
   let best=null,bestScore=-1,bestKey="";
   for(const key of KEYS){
     try{
       const raw=localStorage.getItem(key);
       if(!raw)continue;
-      const data=JSON.parse(raw);
-      const score=dataRecoveryScore(data);
+      const rows=JSON.parse(raw);
+      const score=dataRecoveryScore(rows);
       if(score>bestScore){
-        best=data;
+        best=rows;
         bestScore=score;
         bestKey=key;
       }
     }catch(e){}
   }
   recoveredStorageKey=bestKey;
+  legacyRecoveredRows=Array.isArray(best)?best:[];
   return best?mergeMaster(best):master();
 }
+
+let imageDbPromise=null;
+function openImageDb(){
+  if(imageDbPromise)return imageDbPromise;
+  imageDbPromise=new Promise((resolve,reject)=>{
+    if(!("indexedDB"in window)){
+      reject(new Error("このブラウザは画像保存に対応していません"));
+      return;
+    }
+    const request=indexedDB.open(IMAGE_DB_NAME,IMAGE_DB_VERSION);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains(IMAGE_STORE_NAME)){
+        const store=db.createObjectStore(IMAGE_STORE_NAME,{keyPath:"id"});
+        store.createIndex("name","name",{unique:false});
+      }
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error("画像保存領域を開けませんでした"));
+  });
+  return imageDbPromise;
+}
+async function getAllStoredImages(){
+  const db=await openImageDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IMAGE_STORE_NAME,"readonly");
+    const request=tx.objectStore(IMAGE_STORE_NAME).getAll();
+    request.onsuccess=()=>resolve(request.result||[]);
+    request.onerror=()=>reject(request.error);
+  });
+}
+async function putStoredImage(t,image){
+  const db=await openImageDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IMAGE_STORE_NAME,"readwrite");
+    tx.objectStore(IMAGE_STORE_NAME).put({id:t.id,name:t.name,image,updatedAt:new Date().toISOString()});
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error||new Error("画像を保存できませんでした"));
+    tx.onabort=()=>reject(tx.error||new Error("画像保存が中断されました"));
+  });
+}
+async function deleteStoredImage(t){
+  const db=await openImageDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IMAGE_STORE_NAME,"readwrite");
+    tx.objectStore(IMAGE_STORE_NAME).delete(t.id);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  });
+}
+async function replaceAllStoredImages(rows){
+  const db=await openImageDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IMAGE_STORE_NAME,"readwrite");
+    const store=tx.objectStore(IMAGE_STORE_NAME);
+    store.clear();
+    for(const t of rows){
+      if(t.image)store.put({id:t.id,name:t.name,image:t.image,updatedAt:new Date().toISOString()});
+    }
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  });
+}
+async function hydrateImagesFromDb(){
+  try{
+    const images=await getAllStoredImages();
+    const byId=new Map(images.map(x=>[x.id,x.image]));
+    const byName=new Map(images.map(x=>[x.name,x.image]));
+    for(const t of tsums){
+      const image=byId.get(t.id)||byName.get(t.name);
+      if(image)t.image=image;
+    }
+    renderAll();
+  }catch(err){
+    console.warn("画像の読込に失敗",err);
+  }
+}
+async function migrateLegacyImages(){
+  const source=legacyRecoveredRows.filter(t=>t&&t.image);
+  if(!source.length)return 0;
+  const current=await getAllStoredImages();
+  const ids=new Set(current.map(x=>x.id));
+  const names=new Set(current.map(x=>x.name));
+  let migrated=0;
+  for(const old of source){
+    const t=tsums.find(x=>x.id===old.id)||tsums.find(x=>x.name===old.name);
+    if(!t||ids.has(t.id)||names.has(t.name))continue;
+    await putStoredImage(t,old.image);
+    t.image=old.image;
+    ids.add(t.id);names.add(t.name);migrated++;
+  }
+  return migrated;
+}
+async function initializeSafeStorage(){
+  try{
+    const migrated=await migrateLegacyImages();
+    await hydrateImagesFromDb();
+    save();
+
+    // Stable metadata and IndexedDB images have been written successfully.
+    // Old combined arrays are removed to free Safari storage.
+    if(legacyRecoveredRows.length){
+      for(const key of KEYS){
+        if(key!==KEY)localStorage.removeItem(key);
+      }
+      legacyRecoveredRows=[];
+    }
+    renderSafeStorageStatus(migrated);
+  }catch(err){
+    console.error("安全保存システムの初期化に失敗",err);
+    renderSafeStorageStatus(0,err);
+  }
+}
+function renderSafeStorageStatus(migrated=0,error=null){
+  const el=$("#safeStorageStatus");
+  if(!el)return;
+  const userRecords=buildStableUserStore().records.length;
+  const imageCount=tsums.filter(t=>t.image).length;
+  el.innerHTML=error
+    ?`<strong>保存状態を確認できませんでした</strong><br>${esc(error.message||String(error))}`
+    :`<strong>安全保存は有効です</strong><br>入力済みツム：${userRecords}体<br>画像：${imageCount}体${migrated?`<br>旧データから画像を${migrated}体分移行しました。`:""}<br>保存キー：固定（アップデートで変更しません）`;
+}
+
 let tsums=loadData();
-let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
-let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
-let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catch(e){return[]}})();
-let goals=(()=>{try{return JSON.parse(localStorage.getItem(GOAL_KEY)||"[]")}catch(e){return[]}})();
-let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
-let snapshots=(()=>{try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"[]")}catch(e){return[]}})();
-let dailyTasks=(()=>{try{return JSON.parse(localStorage.getItem(TASK_KEY)||"[]")}catch(e){return[]}})();
-let undoHistory=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_HISTORY_KEY)||"[]")}catch(e){return[]}})();
+function readJsonWithLegacy(stableKey,legacyKeys,fallback){
+  try{
+    const value=JSON.parse(localStorage.getItem(stableKey)||"null");
+    if(value!==null)return value;
+  }catch(e){}
+  for(const key of legacyKeys){
+    try{
+      const value=JSON.parse(localStorage.getItem(key)||"null");
+      if(value!==null)return value;
+    }catch(e){}
+  }
+  return fallback;
+}
+let history=readJsonWithLegacy(HISTORY_KEY,["tsumManagerHistoryV633","tsumManagerHistoryV632","tsumManagerHistoryV631"],[]);
+let recent=readJsonWithLegacy(RECENT_KEY,["tsumManagerRecentV633","tsumManagerRecentV632","tsumManagerRecentV631"],[]);
+let plans=readJsonWithLegacy(PLAN_KEY,["tsumManagerPlansV633","tsumManagerPlansV632","tsumManagerPlansV631"],[]);
+let goals=readJsonWithLegacy(GOAL_KEY,["tsumManagerGoalsV633","tsumManagerGoalsV632","tsumManagerGoalsV631"],[]);
+let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||localStorage.getItem("tsumManagerTicketStockV633")||0));
+let snapshots=readJsonWithLegacy(SNAPSHOT_KEY,["tsumManagerSnapshotsV633","tsumManagerSnapshotsV632"],[]);
+let dailyTasks=readJsonWithLegacy(TASK_KEY,["tsumManagerTasksV633","tsumManagerTasksV632"],[]);
+let undoHistory=readJsonWithLegacy(UNDO_HISTORY_KEY,["tsumManagerUndoHistoryV633","tsumManagerUndoHistoryV632"],[]);
 let viewerIndex=0,pendingBulkImages=[];
-let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
-let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
+let todayTrainingId=localStorage.getItem(TODAY_KEY)||localStorage.getItem("tsumManagerTodayV633")||"";
+let undoState=readJsonWithLegacy(UNDO_KEY,["tsumManagerUndoV633","tsumManagerUndoV632"],null);
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){
   try{
-    localStorage.setItem(KEY,JSON.stringify(tsums));
+    localStorage.setItem(KEY,JSON.stringify(buildStableUserStore()));
+    renderSafeStorageStatus();
     return true;
   }catch(err){
-    console.error("保存に失敗しました",err);
+    console.error("ユーザーデータの保存に失敗しました",err);
     const message=err?.name==="QuotaExceededError"
-      ?"Safariの保存容量が不足しています。新しい画像登録を中止し、現在のデータを保持しました。"
-      :"データを保存できませんでした："+(err?.message||String(err));
+      ?"Safariの保存容量が不足しています。画像は別領域ですが、不要な古いWebサイトデータが残っている可能性があります。"
+      :"入力データを保存できませんでした："+(err?.message||String(err));
     const toastEl=document.querySelector("#toast");
     if(toastEl){
       toastEl.textContent=message;
@@ -825,17 +1045,32 @@ async function applySelectedImage(file){
 }
 $("#editImageInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editCameraInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
-$("#editForm").onsubmit=e=>{
+$("#editForm").onsubmit=async e=>{
   e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,series:$("#editSeries").value.trim(),
   skillGrowth:tsums.find(t=>t.id===id)?.skillGrowth||[],maxSkillLevel:tsums.find(t=>t.id===id)?.maxSkillLevel||6,
   skillGrowthVerified:tsums.find(t=>t.id===id)?.skillGrowthVerified||false,skillGrowthSource:tsums.find(t=>t.id===id)?.skillGrowthSource||"",
   priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
   coinRating:$("#editCoinRating").value,scoreRating:$("#editScoreRating").value,easeRating:$("#editEaseRating").value,
   missionTags:$("#editMissionTags").value,memo:$("#editMemo").value});
-  if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
-  save();$("#editDialog").close();renderAll();toast("保存しました");
+  let savedTsum;
+  if(id){
+    const i=tsums.findIndex(t=>t.id===id);
+    tsums[i]={...tsums[i],...obj,id};
+    savedTsum=tsums[i];
+  }else{
+    tsums.push(obj);
+    savedTsum=obj;
+  }
+  save();
+  try{
+    if(editingImage)await putStoredImage(savedTsum,editingImage);
+    else await deleteStoredImage(savedTsum);
+  }catch(err){
+    alert("入力データは保存しましたが、画像保存に失敗しました："+err.message);
+  }
+  $("#editDialog").close();renderAll();toast("保存しました");
 };
-$("#deleteButton").onclick=()=>{const id=$("#editId").value;if(confirm("このツムを削除しますか？")){tsums=tsums.filter(t=>t.id!==id);save();$("#editDialog").close();renderAll()}};
+$("#deleteButton").onclick=()=>{const id=$("#editId").value;if(confirm("このツムを削除しますか？")){const old=tsums.find(t=>t.id===id);tsums=tsums.filter(t=>t.id!==id);if(old)deleteStoredImage(old).catch(console.warn);save();$("#editDialog").close();renderAll()}};
 
 function openDetail(t){
   detailId=t.id;
@@ -1074,6 +1309,7 @@ $("#bulkImageInput").onchange=async e=>{
       const image=await compressImageFile(file);
       if(exact){
         exact.image=image;
+        await putStoredImage(exact,image);
         matched++;
       }else{
         pendingBulkImages.push({
@@ -1169,22 +1405,24 @@ $("#missingDataSearch").oninput=renderMissingData;
 $("#closeMissingDataButton").onclick=()=>{$("#missingDataDialog").close();renderAll()};
 
 
-$("#applyBulkCandidatesButton").onclick=()=>{
+$("#applyBulkCandidatesButton").onclick=async ()=>{
   let applied=0,skipped=0,duplicates=[];
-  $("#bulkImagePending").querySelectorAll("[data-pending-select]").forEach(select=>{
+  const selects=[...$("#bulkImagePending").querySelectorAll("[data-pending-select]")];
+  for(const select of selects){
     const index=Number(select.dataset.pendingSelect);
     const item=pendingBulkImages[index];
     const id=select.value;
-    if(!item||!id){skipped++;return}
+    if(!item||!id){skipped++;continue}
     const t=tsums.find(x=>x.id===id);
-    if(!t){skipped++;return}
+    if(!t){skipped++;continue}
     if(t.image){
       duplicates.push(t.name);
-      return;
+      continue;
     }
     t.image=item.image;
+    await putStoredImage(t,item.image);
     applied++;
-  });
+  }
   save();renderAll();
   pendingBulkImages=[];
   renderPendingBulkImages();
@@ -1208,7 +1446,7 @@ function renderImageManager(){
     </div>`).join(""):`<div class="image-manager-empty">登録済み画像はありません。</div>`;
   $("#imageManagerGrid").querySelectorAll("[data-remove-image]").forEach(b=>b.onclick=()=>{
     const t=tsums.find(x=>x.id===b.dataset.removeImage);if(!t)return;
-    if(confirm(`${t.name}の画像を削除しますか？`)){t.image="";save();renderImageManager();renderAll();toast("画像を削除しました")}
+    if(confirm(`${t.name}の画像を削除しますか？`)){t.image="";deleteStoredImage(t).catch(console.warn);save();renderImageManager();renderAll();toast("画像を削除しました")}
   });
 }
 $("#openImageManagerButton").onclick=()=>{renderImageManager();$("#imageManagerDialog").showModal()};
@@ -1216,15 +1454,54 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"7.3 Plus & Rewards",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
+  const backup={
+    app:"TsumManager",
+    version:"8.0 Safe Storage",
+    backupType:"light",
+    exportedAt:new Date().toISOString(),
+    userData:buildStableUserStore(),
+    history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
+  };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`TsumManager_light_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 $("#importInput").onchange=e=>{
-  const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);if(Array.isArray(j.snapshots))snapshots=j.snapshots;if(Array.isArray(j.dailyTasks))dailyTasks=j.dailyTasks;if(Array.isArray(j.undoHistory))undoHistory=j.undoHistory;save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const j=JSON.parse(r.result);
+      if(j.userData&&Array.isArray(j.userData.records)){
+        tsums=mergeUserStore(j.userData);
+      }else{
+        const arr=Array.isArray(j)?j:j.tsums;
+        if(!Array.isArray(arr))throw new Error("入力データがありません");
+        tsums=mergeMaster(arr);
+      }
+      if(Array.isArray(j.history))history=j.history;
+      if(Array.isArray(j.recent))recent=j.recent;
+      if(Array.isArray(j.plans))plans=j.plans;
+      if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;
+      if(Array.isArray(j.goals))goals=j.goals;
+      if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);
+      if(Array.isArray(j.snapshots))snapshots=j.snapshots;
+      if(Array.isArray(j.dailyTasks))dailyTasks=j.dailyTasks;
+      if(Array.isArray(j.undoHistory))undoHistory=j.undoHistory;
+      save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();
+      saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();
+      renderAll();toast("軽量バックアップを読み込みました");
+    }catch(err){
+      alert("正しい軽量バックアップではありません："+err.message);
+    }
+  };
+  r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];snapshots=[];dailyTasks=[];undoHistory=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();saveToday();saveUndo();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];snapshots=[];dailyTasks=[];undoHistory=[];ticketStock=0;todayTrainingId="";undoState=null;replaceAllStoredImages([]).catch(console.warn);save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();saveToday();saveUndo();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{
@@ -1341,13 +1618,14 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"7.3 Plus & Rewards",
+    version:"8.0 Safe Storage",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
       userAgent:navigator.userAgent,
       language:navigator.language
     },
+    userData:buildStableUserStore(),
     tsums,
     history,
     recent,
@@ -1448,7 +1726,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"7.3 Plus & Rewards",
+      version:"8.0 Safe Storage",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1484,7 +1762,7 @@ function validateBackup(data){
   if(data.tsums.length<1)throw new Error("ツムデータが空です");
   return true;
 }
-function restoreFullBackup(data){
+async function restoreFullBackup(data){
   validateBackup(data);
   tsums=mergeMaster(data.tsums);
   history=Array.isArray(data.history)?data.history:[];
@@ -1509,6 +1787,7 @@ function restoreFullBackup(data){
     increment=Number(data.settings.increment)||1;
   }
   save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();
+  await replaceAllStoredImages(tsums);
   renderAll();renderSettings();
 }
 function renderBackupSummary(){
@@ -1572,7 +1851,7 @@ $("#importFullBackupInput").onchange=e=>{
       const message=`バックアップを読み込みます。\n\nツム数：${data.tsums.length}体\n画像：${imageCount}体\n作成日時：${data.exportedAt?new Date(data.exportedAt).toLocaleString("ja-JP"):"不明"}\n\n現在のデータは置き換えられます。`;
       if(!confirm(message))return;
       if($("#autoBackupBeforeImport").checked)await exportFullBackup("TsumManager_BeforeRestore",false);
-      restoreFullBackup(data);
+      await restoreFullBackup(data);
       $("#backupStatus").innerHTML=`バックアップを復元しました。<br>ツム：${data.tsums.length}体／画像：${imageCount}体`;
       toast("バックアップを復元しました");
     }catch(err){
@@ -1670,7 +1949,7 @@ $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e
 $("#compactToggle").checked=compact;$("#compactToggle").onchange=e=>{compact=e.target.checked;gallery=false;localStorage.setItem("tm-compact",compact?"1":"0");localStorage.setItem("tm-gallery","0");if(activeView==="list")renderList()};
 $("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
-renderAll();showView("home");
+renderAll();showView("home");initializeSafeStorage();
 
 
 function renderRescueStatus(){
@@ -1678,7 +1957,7 @@ function renderRescueStatus(){
   if(!el)return;
   const imageCount=tsums.filter(t=>t.image).length;
   const ownedTotal=tsums.reduce((sum,t)=>sum+Number(t.owned||0),0);
-  el.innerHTML=`読込元：${esc(recoveredStorageKey||"保存データなし")}<br>画像登録：${imageCount}体<br>所持数合計：${ownedTotal}<br>収録ツム：${tsums.length}体`;
+  el.innerHTML=`移行元：${esc(recoveredStorageKey||"新規データ")}<br>画像登録：${imageCount}体<br>所持数合計：${ownedTotal}<br>収録ツム：${tsums.length}体<br>現在は固定保存領域を使用しています。`;
 }
 const rescueBackupButton=$("#rescueBackupButton");
 if(rescueBackupButton){
@@ -1688,7 +1967,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"7.3 Plus & Rewards",
+        version:"8.0 Safe Storage",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
@@ -1703,3 +1982,10 @@ if(rescueBackupButton){
   };
 }
 
+
+const saveUserDataNowButton=$("#saveUserDataNowButton");
+if(saveUserDataNowButton){
+  saveUserDataNowButton.onclick=()=>{
+    if(save())toast("現在の入力データを安全保存しました");
+  };
+}

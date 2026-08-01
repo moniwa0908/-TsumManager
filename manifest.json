@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 7.3 Plus & Rewards",
+  "name": "TsumManager 8.0 Safe Storage",
   "short_name": "ツム管理",
-  "description": "ミッキー＋からガジェットまでのBOX＋・限定・報酬ツムのスキル成長データを反映した復旧対応版",
+  "description": "マスターデータと個人データを分離し、所持数と画像を更新から守る安全保存版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
