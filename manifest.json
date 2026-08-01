@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.2",
+  "name": "TsumManager 6.3",
   "short_name": "ツム管理",
-  "description": "画像を含む完全バックアップと復元に対応した個人用ツム管理Webアプリ",
+  "description": "Game8の全ツム一覧とスキルマ必要数を反映したデータ更新版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

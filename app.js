@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV62", HISTORY_KEY="tsumManagerHistoryV62", RECENT_KEY="tsumManagerRecentV62", PLAN_KEY="tsumManagerPlansV62", TODAY_KEY="tsumManagerTodayV62", UNDO_KEY="tsumManagerUndoV62", GOAL_KEY="tsumManagerGoalsV62", TICKET_STOCK_KEY="tsumManagerTicketStockV62", SNAPSHOT_KEY="tsumManagerSnapshotsV62", TASK_KEY="tsumManagerTasksV62", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV62", BACKUP_META_KEY="tsumManagerBackupMetaV62";
+const KEYS=["tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV63", HISTORY_KEY="tsumManagerHistoryV63", RECENT_KEY="tsumManagerRecentV63", PLAN_KEY="tsumManagerPlansV63", TODAY_KEY="tsumManagerTodayV63", UNDO_KEY="tsumManagerUndoV63", GOAL_KEY="tsumManagerGoalsV63", TICKET_STOCK_KEY="tsumManagerTicketStockV63", SNAPSHOT_KEY="tsumManagerSnapshotsV63", TASK_KEY="tsumManagerTasksV63", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV63", BACKUP_META_KEY="tsumManagerBackupMetaV63";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -32,7 +32,8 @@ const norm=t=>({
   coinRating:Math.max(0,Math.min(5,Number(t.coinRating||0))),
   scoreRating:Math.max(0,Math.min(5,Number(t.scoreRating||0))),
   easeRating:Math.max(0,Math.min(5,Number(t.easeRating||0))),
-  missionTags:Array.isArray(t.missionTags)?t.missionTags.map(x=>String(x).trim()).filter(Boolean):String(t.missionTags||"").split(",").map(x=>x.trim()).filter(Boolean)
+  missionTags:Array.isArray(t.missionTags)?t.missionTags.map(x=>String(x).trim()).filter(Boolean):String(t.missionTags||"").split(",").map(x=>x.trim()).filter(Boolean),
+  requiredVerified:!!t.requiredVerified,requiredSource:String(t.requiredSource||"")
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 function mergeMaster(existing){
@@ -44,6 +45,10 @@ function mergeMaster(existing){
       merged.push(norm({
         ...m,
         ...old,
+        required:m.required,
+        requiredVerified:m.requiredVerified,
+        requiredSource:m.requiredSource,
+        owned:Math.min(Number(old.owned||0),Number(m.required||36)),
         releaseDate:old.releaseDate||m.releaseDate,
         releaseYear:old.releaseYear||m.releaseYear,
         releaseOrder:old.releaseOrder||m.releaseOrder
@@ -1053,7 +1058,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1172,7 +1177,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.2",
+    version:"6.3",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1221,7 +1226,7 @@ function backupFileName(prefix="TsumManager_Backup"){
 function exportFullBackup(prefix="TsumManager_Backup"){
   const data=buildFullBackup();
   const size=downloadJsonFile(data,backupFileName(prefix));
-  const meta={time:new Date().toISOString(),size,images:tsums.filter(t=>t.image).length,version:"6.2"};
+  const meta={time:new Date().toISOString(),size,images:tsums.filter(t=>t.image).length,version:"6.3"};
   localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
   renderBackupSummary();
   $("#backupStatus").innerHTML=`バックアップを作成しました。<br>画像：${meta.images}体<br>ファイルサイズ：約${formatBytes(size)}`;
