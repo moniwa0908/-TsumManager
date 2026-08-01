@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.3.5 Rescue",
+  "name": "TsumManager 7.0 Rescue",
   "short_name": "ツム管理",
-  "description": "過去の保存領域から画像・所持数などが最も多いデータを自動復旧する緊急修正版",
+  "description": "実際のゲーム画面と同じスキルレベル・ゲージ率入力に対応したデータ復旧対応版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

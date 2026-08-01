@@ -27,7 +27,10 @@ const norm=t=>({
   scoreRating:Math.max(0,Math.min(5,Number(t.scoreRating||0))),
   easeRating:Math.max(0,Math.min(5,Number(t.easeRating||0))),
   missionTags:Array.isArray(t.missionTags)?t.missionTags.map(x=>String(x).trim()).filter(Boolean):String(t.missionTags||"").split(",").map(x=>x.trim()).filter(Boolean),
-  requiredVerified:!!t.requiredVerified,requiredSource:String(t.requiredSource||"")
+  requiredVerified:!!t.requiredVerified,requiredSource:String(t.requiredSource||""),
+  skillGrowth:Array.isArray(t.skillGrowth)?t.skillGrowth.map(x=>Math.max(0,Number(x)||0)):[],
+  maxSkillLevel:Math.max(1,Number(t.maxSkillLevel||((Array.isArray(t.skillGrowth)?t.skillGrowth.length:5)+1))),
+  skillGrowthVerified:!!t.skillGrowthVerified,skillGrowthSource:String(t.skillGrowthSource||"")
 });
 const master=()=>window.TSUM_MASTER_DATA.map(norm);
 function mergeMaster(existing){
@@ -42,6 +45,10 @@ function mergeMaster(existing){
         required:m.required,
         requiredVerified:m.requiredVerified,
         requiredSource:m.requiredSource,
+        skillGrowth:m.skillGrowth,
+        maxSkillLevel:m.maxSkillLevel,
+        skillGrowthVerified:m.skillGrowthVerified,
+        skillGrowthSource:m.skillGrowthSource,
         owned:Math.min(Number(old.owned||0),Number(m.required||36)),
         releaseDate:old.releaseDate||m.releaseDate,
         releaseYear:old.releaseYear||m.releaseYear,
@@ -149,16 +156,56 @@ function touchRecent(id){
 }
 const remain=t=>Math.max(0,t.required-t.owned);
 const pct=t=>Math.min(100,Math.round(t.owned/t.required*100));
+function growthProfile(t){
+  if(Array.isArray(t.skillGrowth)&&t.skillGrowth.length)return t.skillGrowth;
+  const remaining=Math.max(0,Number(t.required||1)-1);
+  if(remaining===0)return[];
+  const parts=Number(t.required)>=6?5:Math.max(1,Number(t.required)-1);
+  const base=Math.floor(remaining/parts),extra=remaining%parts;
+  return Array.from({length:parts},(_,i)=>base+(i>=parts-extra?1:0));
+}
+function skillState(t){
+  const profile=growthProfile(t);
+  const maxLevel=profile.length+1;
+  const owned=Math.max(0,Math.min(Number(t.owned||0),Number(t.required||1)));
+  if(owned<=0){
+    return {owned,level:0,maxLevel,percent:0,max:false,nextCopies:1,within:0,segment:0};
+  }
+  let duplicates=owned-1;
+  for(let i=0;i<profile.length;i++){
+    const need=profile[i];
+    if(duplicates<need){
+      const percent=need>0?Math.floor(duplicates/need*100):0;
+      return {owned,level:i+1,maxLevel,percent,max:false,nextCopies:need-duplicates,within:duplicates,segment:need};
+    }
+    duplicates-=need;
+  }
+  return {owned,level:maxLevel,maxLevel,percent:100,max:true,nextCopies:0,within:0,segment:0};
+}
 function skillText(t){
-  if(t.owned===0)return"未所持";
-  if(remain(t)===0)return"スキルMAX";
-  const p=t.owned/t.required;
-  if(p<.08)return"SL1";
-  if(p<.20)return"SL2目安";
-  if(p<.38)return"SL3目安";
-  if(p<.58)return"SL4目安";
-  if(p<.79)return"SL5目安";
-  return"SL6途中";
+  const s=skillState(t);
+  if(s.level===0)return"未所持";
+  if(s.max)return`スキルMAX（${s.maxLevel}/${s.maxLevel}）`;
+  return`スキル${s.level}/${s.maxLevel} ${s.percent}%`;
+}
+function skillOwnedFromDisplay(t,level,percent){
+  const profile=growthProfile(t);
+  const maxLevel=profile.length+1;
+  level=Math.max(0,Math.min(maxLevel,Number(level)||0));
+  if(level===0)return 0;
+  if(level>=maxLevel)return Number(t.required||1);
+  let owned=1;
+  for(let i=0;i<level-1;i++)owned+=profile[i]||0;
+  const need=profile[level-1]||0;
+  const copies=Math.max(0,Math.min(Math.max(0,need-1),Math.round(need*(Number(percent)||0)/100)));
+  return Math.min(Number(t.required||1),owned+copies);
+}
+function skillPercentOptions(t,level){
+  const profile=growthProfile(t),maxLevel=profile.length+1;
+  if(Number(level)<=0)return[0];
+  if(Number(level)>=maxLevel)return[100];
+  const need=profile[Number(level)-1]||1;
+  return Array.from({length:need},(_,copies)=>Math.floor(copies/need*100));
 }
 const priorityText=n=>n===1?"最優先":n===2?"優先":n===3?"あとで":"";
 function toast(message){
@@ -194,7 +241,7 @@ function cardHtml(t){
         ${tag?`<span class="priority-tag">${tag}</span>`:""}
         <button class="more" data-action="edit" data-id="${t.id}">•••</button>
       </div>
-      <div class="meta">${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)} ・ ${pct(t)}%</div>
+      <div class="meta">${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)}${t.skillGrowthVerified?"":`<span class="skill-source-note">推定配分</span>`}</div>
       <div class="release-label">${t.releaseDate?`登場 ${esc(t.releaseDate.replace("-", "年"))}月`:"登場年月未登録"}</div>
       ${t.series?`<div class="series-label">${esc(t.series)}</div>`:""}
       ${t.tags.length?`<div class="tag-list">${t.tags.slice(0,3).map(tag=>`<span class="tag-pill">${esc(tag)}</span>`).join("")}</div>`:""}
@@ -669,15 +716,80 @@ function renderAll(){
   if(activeView==="planner")renderPlanner();
   if(activeView==="box")renderBox();
 }
+
+function currentEditingTsum(){
+  const id=$("#editId")?.value;
+  const existing=tsums.find(x=>x.id===id);
+  if(existing)return existing;
+  return norm({
+    name:$("#editName")?.value||"",
+    required:Number($("#editRequired")?.value)||36,
+    owned:Number($("#editOwned")?.value)||0,
+    skillGrowth:[]
+  });
+}
+function renderSkillEditControls(t){
+  const levelSelect=$("#editSkillLevel"),percentSelect=$("#editSkillPercent"),preview=$("#editSkillPreview");
+  if(!levelSelect||!percentSelect||!preview)return;
+  const state=skillState(t);
+  levelSelect.innerHTML=`<option value="0">未所持</option>`+
+    Array.from({length:state.maxLevel},(_,i)=>{
+      const level=i+1;
+      return `<option value="${level}" ${state.level===level?"selected":""}>${level}/${state.maxLevel}${level===state.maxLevel?"（MAX）":""}</option>`;
+    }).join("");
+  renderSkillPercentSelect(t,state.level,state.percent);
+}
+function renderSkillPercentSelect(t,level,preferredPercent=0){
+  const percentSelect=$("#editSkillPercent"),preview=$("#editSkillPreview");
+  if(!percentSelect||!preview)return;
+  const options=skillPercentOptions(t,level);
+  let selected=options.reduce((best,p)=>Math.abs(p-preferredPercent)<Math.abs(best-preferredPercent)?p:best,options[0]||0);
+  percentSelect.innerHTML=options.map(p=>`<option value="${p}" ${p===selected?"selected":""}>${p}%</option>`).join("");
+  updateOwnedFromSkillControls(t);
+}
+function updateOwnedFromSkillControls(t=currentEditingTsum()){
+  const level=Number($("#editSkillLevel")?.value)||0;
+  const percent=Number($("#editSkillPercent")?.value)||0;
+  const owned=skillOwnedFromDisplay(t,level,percent);
+  if($("#editOwned"))$("#editOwned").value=owned;
+  const state=skillState({...t,owned});
+  if($("#editSkillPreview")){
+    $("#editSkillPreview").innerHTML=state.level===0
+      ?"未所持"
+      :`${state.max?`スキルMAX ${state.maxLevel}/${state.maxLevel}`:`スキル ${state.level}/${state.maxLevel}　${state.percent}%`}<div class="skill-gauge-line"><i style="width:${state.percent}%"></i></div>`;
+  }
+}
+
 function openEdit(t=null){
   $("#dialogTitle").textContent=t?"ツムを編集":"ツムを追加";$("#editId").value=t?.id||"";
   $("#editName").value=t?.name||"";$("#editCategory").value=t?.category||"プレミアム";
   $("#editRequired").value=t?.required||36;$("#editReleaseDate").value=t?.releaseDate||"";$("#editSeries").value=t?.series||"";$("#editOwned").value=t?.owned||0;
+  renderSkillEditControls(t||norm({name:"",required:$("#editRequired").value,owned:0}));
   $("#editPriority").value=String(t?.priority||0);$("#editTags").value=(t?.tags||[]).join(",");
   $("#editCoinRating").value=String(t?.coinRating||0);$("#editScoreRating").value=String(t?.scoreRating||0);$("#editEaseRating").value=String(t?.easeRating||0);
   $("#editMissionTags").value=(t?.missionTags||[]).join(",");$("#editMemo").value=t?.memo||"";
   editingImage=t?.image||"";renderImagePreview();$("#deleteButton").style.display=t?"":"none";$("#editDialog").showModal();
 }
+
+$("#editSkillLevel").onchange=()=>{
+  const t=currentEditingTsum();
+  renderSkillPercentSelect(t,Number($("#editSkillLevel").value),0);
+};
+$("#editSkillPercent").onchange=()=>updateOwnedFromSkillControls();
+$("#editOwned").oninput=()=>{
+  const t=currentEditingTsum();
+  t.owned=Math.max(0,Math.min(t.required,Number($("#editOwned").value)||0));
+  renderSkillEditControls(t);
+};
+$("#editRequired").onchange=()=>{
+  const t=currentEditingTsum();
+  t.required=Math.max(1,Number($("#editRequired").value)||36);
+  // Manually added/changed totals use a fallback distribution.
+  t.skillGrowth=[];
+  t.maxSkillLevel=t.required>=6?6:t.required;
+  renderSkillEditControls(t);
+};
+
 function renderImagePreview(){
   const zone=$("#imagePreview");
   zone.innerHTML=editingImage?`<img src="${editingImage}" alt="登録画像">`:`<span>画像をタップして選択</span>`;
@@ -714,7 +826,10 @@ async function applySelectedImage(file){
 $("#editImageInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editCameraInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editForm").onsubmit=e=>{
-  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,series:$("#editSeries").value.trim(),priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
+  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,series:$("#editSeries").value.trim(),
+  skillGrowth:tsums.find(t=>t.id===id)?.skillGrowth||[],maxSkillLevel:tsums.find(t=>t.id===id)?.maxSkillLevel||6,
+  skillGrowthVerified:tsums.find(t=>t.id===id)?.skillGrowthVerified||false,skillGrowthSource:tsums.find(t=>t.id===id)?.skillGrowthSource||"",
+  priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
   coinRating:$("#editCoinRating").value,scoreRating:$("#editScoreRating").value,easeRating:$("#editEaseRating").value,
   missionTags:$("#editMissionTags").value,memo:$("#editMemo").value});
   if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
@@ -727,9 +842,18 @@ function openDetail(t){
   $("#detailAvatar").innerHTML=avatarHtml(t);
   $("#detailCategory").textContent=t.category;
   $("#detailName").textContent=t.name;
+  const state=skillState(t);
   $("#detailSkill").textContent=skillText(t);
-  $("#detailPercent").textContent=pct(t)+"%";
-  $("#detailBar").style.width=pct(t)+"%";
+  $("#detailPercent").textContent=state.level===0?"0%":state.percent+"%";
+  $("#detailBar").style.width=(state.level===0?0:state.percent)+"%";
+  const next=$("#detailNextSkill");
+  if(next){
+    next.textContent=state.level===0
+      ?"未所持です。最初の1体を入手するとスキル1になります。"
+      :state.max
+        ?"スキルMAXです。"
+        :`次のスキルレベルまであと${state.nextCopies}体（現在の段階 ${state.within}/${state.segment}体）`;
+  }
   $("#detailOwned").textContent=t.owned;
   $("#detailRequired").textContent=t.required;
   $("#detailRemaining").textContent=remain(t);
@@ -1092,7 +1216,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.5 Rescue",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"7.0 Rescue",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1217,7 +1341,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3.5 Rescue",
+    version:"7.0 Rescue",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1324,7 +1448,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"6.3.5 Rescue",
+      version:"7.0 Rescue",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1564,7 +1688,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"6.3.5 Rescue",
+        version:"7.0 Rescue",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

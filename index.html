@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 6.3.5 Rescue</title>
+  <title>TsumManager 7.0 Rescue</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 6.3.5 Rescue</p>
+      <p>TsumManager 7.0 Rescue</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -501,8 +501,21 @@
       <label>登場年月<input id="editReleaseDate" type="month"></label>
       <label>シリーズ<input id="editSeries" placeholder="例：ミッキー＆フレンズ"></label>
     </div>
+    <div class="skill-input-panel">
+      <span class="field-label">ゲーム画面と同じ形式で入力</span>
+      <div class="skill-input-grid">
+        <label>スキル
+          <select id="editSkillLevel"></select>
+        </label>
+        <label>ゲージ
+          <select id="editSkillPercent"></select>
+        </label>
+      </div>
+      <div id="editSkillPreview" class="skill-live-preview">未所持</div>
+      <p class="helper">例：ゲーム画面が「スキル3/6 25%」なら、スキル3・25%を選択してください。</p>
+    </div>
     <div class="form-grid">
-      <label>現在数<input id="editOwned" type="number" min="0" max="999" required></label>
+      <label>現在数（自動換算）<input id="editOwned" type="number" min="0" max="999" required></label>
       <label>育成優先度
         <select id="editPriority">
           <option value="0">設定なし</option>
@@ -674,7 +687,7 @@
     </div>
     <div class="detail-progress-wrap">
       <div class="detail-progress-head"><span>育成進捗</span><b id="detailPercent">0%</b></div>
-      <div class="detail-progress"><i id="detailBar"></i></div>
+      <div class="detail-progress"><i id="detailBar"></i></div><div id="detailNextSkill" class="detail-next-skill"></div>
     </div>
     <div class="detail-grid">
       <div><span>現在数</span><b id="detailOwned">0</b></div>
