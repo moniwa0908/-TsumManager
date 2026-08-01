@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV9", HISTORY_KEY="tsumManagerHistoryV9", RECENT_KEY="tsumManagerRecentV9";
+const KEYS=["tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV10", HISTORY_KEY="tsumManagerHistoryV10", RECENT_KEY="tsumManagerRecentV10", PLAN_KEY="tsumManagerPlansV10";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -28,11 +28,13 @@ function loadData(){
 let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
 let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
-let activeView="home",category="すべて",status="all",activeTag="すべて",increment=1;
+let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catch(e){return[]}})();
+let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
 function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
+function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
 function touchRecent(id){
   recent=[id,...recent.filter(x=>x!==id)].slice(0,20);
   saveRecent();
@@ -62,10 +64,12 @@ function showView(view){
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.id!==view+"View");
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   if(view==="home")renderHome();
+  if(view==="collection")renderCollection();
   if(view==="list")renderList();
   if(view==="box")renderBox();
   if(view==="training")renderTraining();
   if(view==="stats")renderStats();
+  if(view==="planner")renderPlanner();
   if(view==="settings")renderSettings();
   scrollTo({top:0,behavior:"smooth"});
 }
@@ -136,6 +140,72 @@ function renderHome(){
 function miniHtml(t,recommend=false){
   return `<div class="mini-item"><div class="avatar">${avatarHtml(t)}</div><div><strong>${esc(t.name)}</strong><small>${recommend?'<span class="recommend-badge">育成候補</span> ':''}残り${remain(t)} ・ ${pct(t)}%</small></div><button data-name="${esc(t.name)}">表示</button></div>`;
 }
+
+function renderCollection(){
+  const q=$("#collectionSearch").value.trim().toLowerCase();
+  const filter=$("#collectionFilter").value;
+  const cats=["すべて",...new Set(tsums.map(t=>t.category))];
+  $("#collectionCategoryChips").innerHTML=cats.map(c=>`<button data-collection-category="${esc(c)}" class="${c===collectionCategory?"active":""}">${esc(c)}</button>`).join("");
+  $("#collectionCategoryChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{collectionCategory=b.dataset.collectionCategory;renderCollection()});
+  let rows=tsums.filter(t=>{
+    const matchesFilter=filter==="all"||(filter==="owned"&&t.owned>0)||(filter==="unowned"&&t.owned===0)||(filter==="max"&&remain(t)===0)||(filter==="image"&&t.image);
+    return matchesFilter&&(collectionCategory==="すべて"||t.category===collectionCategory)&&(t.name.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
+  });
+  rows.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  const owned=tsums.filter(t=>t.owned>0).length;
+  const maxed=tsums.filter(t=>remain(t)===0).length;
+  $("#collectionRate").textContent=Math.round(owned/tsums.length*100)+"%";
+  $("#collectionOwned").textContent=owned;
+  $("#collectionMissing").textContent=tsums.length-owned;
+  $("#collectionMaxed").textContent=maxed;
+  $("#collectionGrid").innerHTML=rows.map(t=>`<button class="collection-item ${t.owned===0?"unowned":""} ${remain(t)===0?"max":""}" data-collection-id="${t.id}">
+    ${remain(t)===0?'<span class="collection-mark">MAX</span>':""}
+    <div class="avatar">${avatarHtml(t)}</div>
+    <strong>${esc(t.name)}</strong>
+    <small>${t.owned}/${t.required}</small>
+  </button>`).join("")||`<div class="panel helper">該当するツムがありません。</div>`;
+  $("#collectionGrid").querySelectorAll("[data-collection-id]").forEach(b=>b.onclick=()=>{
+    const t=tsums.find(x=>x.id===b.dataset.collectionId);if(t)openDetail(t);
+  });
+}
+function planStats(names){
+  const found=[],missing=[];
+  for(const name of names){
+    const t=tsums.find(x=>x.name===name);
+    t?found.push(t):missing.push(name);
+  }
+  const remaining=found.reduce((s,t)=>s+remain(t),0);
+  return{found,missing,remaining,coins:remaining*30000,maxed:found.filter(t=>remain(t)===0).length};
+}
+function renderPlanner(){
+  $("#planList").innerHTML=plans.length?plans.map(p=>{
+    const stats=planStats(p.tsums||[]);
+    return `<article class="plan-card">
+      <div class="plan-card-head"><div><span class="plan-type">${esc(p.type)}</span><strong> ${esc(p.name)}</strong></div><button data-edit-plan="${p.id}">編集</button></div>
+      <div class="plan-card-stats">
+        <div><b>${stats.found.length}</b><span>対象ツム</span></div>
+        <div><b>${stats.remaining.toLocaleString("ja-JP")}</b><span>残り必要数</span></div>
+        <div><b>${stats.coins.toLocaleString("ja-JP")}</b><span>必要コイン</span></div>
+      </div>
+      ${stats.missing.length?`<p class="helper">未登録：${stats.missing.map(esc).join("、")}</p>`:""}
+      ${p.memo?`<p class="helper">${esc(p.memo)}</p>`:""}
+    </article>`;
+  }).join(""):`<div class="helper">ガチャ計画はまだありません。</div>`;
+  $("#planList").querySelectorAll("[data-edit-plan]").forEach(b=>b.onclick=()=>{
+    const p=plans.find(x=>x.id===b.dataset.editPlan);if(p)openPlan(p);
+  });
+}
+function openPlan(plan=null){
+  $("#planDialogTitle").textContent=plan?"ガチャ計画を編集":"ガチャ計画を作成";
+  $("#planId").value=plan?.id||"";
+  $("#planName").value=plan?.name||"";
+  $("#planType").value=plan?.type||"セレクトBOX";
+  $("#planTsums").value=(plan?.tsums||[]).join("\n");
+  $("#planMemo").value=plan?.memo||"";
+  $("#deletePlanButton").style.display=plan?"":"none";
+  $("#planDialog").showModal();
+}
+
 function renderList(){
   const q=$("#searchInput").value.trim().toLowerCase(),sort=$("#sortSelect").value;
   const cats=["すべて",...new Set(tsums.map(t=>t.category))];
@@ -218,9 +288,11 @@ function renderBox(){
 function renderSettings(){$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体"}
 function renderAll(){
   renderHome();
+  if(activeView==="collection")renderCollection();
   if(activeView==="list")renderList();
   if(activeView==="training")renderTraining();
   if(activeView==="stats")renderStats();
+  if(activeView==="planner")renderPlanner();
   if(activeView==="box")renderBox();
 }
 function openEdit(t=null){
@@ -354,6 +426,30 @@ $("#trainingHelpButton").onclick=()=>openMessage("育成予定の使い方","一
 $("#cancelEditButton").onclick=()=>$("#editDialog").close();
 $("#closeMessageButton").onclick=()=>$("#messageDialog").close();
 
+
+$("#collectionSearch").oninput=renderCollection;
+$("#collectionFilter").onchange=renderCollection;
+$("#newPlanButton").onclick=()=>openPlan();
+$("#cancelPlanButton").onclick=()=>$("#planDialog").close();
+$("#planForm").onsubmit=e=>{
+  e.preventDefault();
+  const id=$("#planId").value||crypto.randomUUID();
+  const obj={id,name:$("#planName").value.trim(),type:$("#planType").value,tsums:$("#planTsums").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),memo:$("#planMemo").value.trim()};
+  const i=plans.findIndex(p=>p.id===id);
+  if(i>=0)plans[i]=obj;else plans.push(obj);
+  savePlans();$("#planDialog").close();renderPlanner();toast("ガチャ計画を保存しました");
+};
+$("#deletePlanButton").onclick=()=>{
+  const id=$("#planId").value;
+  if(id&&confirm("このガチャ計画を削除しますか？")){plans=plans.filter(p=>p.id!==id);savePlans();$("#planDialog").close();renderPlanner()}
+};
+$("#clearQuickPlanButton").onclick=()=>{$("#quickPlanText").value="";$("#quickPlanResult").textContent="対象ツムを入力してください。"};
+$("#calcQuickPlanButton").onclick=()=>{
+  const names=$("#quickPlanText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const s=planStats(names);
+  $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
+};
+
 $("#removeImageButton").onclick=()=>{
   if(!editingImage){toast("画像は登録されていません");return}
   editingImage="";
@@ -378,15 +474,15 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:9,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"1.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;save();saveHistory();saveRecent();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;save();saveHistory();saveRecent();savePlans();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];save();saveHistory();saveRecent();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];save();saveHistory();saveRecent();savePlans();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{

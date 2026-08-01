@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager Ver.9</title>
+  <title>TsumManager 1.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager Ver.9</p>
+      <p>TsumManager 1.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -67,6 +67,35 @@
         <div class="section-title"><h2>スキルマ目前</h2><button id="showNearButton">一覧で見る</button></div>
         <div id="homeNearList" class="mini-list"></div>
       </article>
+    </section>
+
+
+    <section id="collectionView" class="view" hidden>
+      <article class="panel collection-summary">
+        <div>
+          <span>コレクション率</span>
+          <strong id="collectionRate">0%</strong>
+        </div>
+        <div class="collection-summary-grid">
+          <div><b id="collectionOwned">0</b><span>所持</span></div>
+          <div><b id="collectionMissing">0</b><span>未所持</span></div>
+          <div><b id="collectionMaxed">0</b><span>スキルマ</span></div>
+        </div>
+      </article>
+      <article class="panel">
+        <div class="search-row">
+          <input id="collectionSearch" type="search" placeholder="図鑑を検索">
+          <select id="collectionFilter">
+            <option value="all">すべて</option>
+            <option value="owned">所持済み</option>
+            <option value="unowned">未所持</option>
+            <option value="max">スキルマ</option>
+            <option value="image">画像登録済み</option>
+          </select>
+        </div>
+        <div id="collectionCategoryChips" class="chips"></div>
+      </article>
+      <div id="collectionGrid" class="collection-grid"></div>
     </section>
 
     <section id="listView" class="view" hidden>
@@ -171,6 +200,25 @@
       </article>
     </section>
 
+
+    <section id="plannerView" class="view" hidden>
+      <article class="panel">
+        <div class="section-title"><h2>ガチャ計画</h2><button id="newPlanButton">新規作成</button></div>
+        <p class="helper">セレクトBOXやピックアップの対象ツムを登録し、必要数と必要コインを計算します。</p>
+        <div id="planList" class="plan-list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>対象ツムから簡易計算</h2>
+        <textarea id="quickPlanText" placeholder="1行に1体入力&#10;例：&#10;エルサ&#10;野獣&#10;ガストン"></textarea>
+        <div class="button-row">
+          <button id="clearQuickPlanButton" class="secondary-button">クリア</button>
+          <button id="calcQuickPlanButton" class="primary-button">計算する</button>
+        </div>
+        <div id="quickPlanResult" class="result-box">対象ツムを入力してください。</div>
+      </article>
+    </section>
+
     <section id="settingsView" class="view" hidden>
       <article class="panel settings-panel">
         <h2>表示設定</h2>
@@ -221,9 +269,10 @@
 
   <nav class="bottom-nav">
     <button class="active" data-view="home"><span>⌂</span><b>ホーム</b></button>
+    <button data-view="collection"><span>▦</span><b>図鑑</b></button>
     <button data-view="list"><span>☷</span><b>一覧</b></button>
     <button data-view="box"><span>＋</span><b>入力</b></button>
-    <button data-view="stats"><span>▥</span><b>分析</b></button>
+    <button data-view="planner"><span>◎</span><b>計画</b></button>
     <button data-view="settings"><span>⚙</span><b>設定</b></button>
   </nav>
 </div>
@@ -265,6 +314,30 @@
 </dialog>
 
 
+
+
+<dialog id="planDialog">
+  <form id="planForm">
+    <h2 id="planDialogTitle">ガチャ計画を作成</h2>
+    <input id="planId" type="hidden">
+    <label>計画名<input id="planName" required placeholder="例：8月セレクトBOX"></label>
+    <label>種類
+      <select id="planType">
+        <option value="セレクトBOX">セレクトBOX</option>
+        <option value="ピックアップ">ピックアップ</option>
+        <option value="プレミアムBOX">プレミアムBOX</option>
+        <option value="その他">その他</option>
+      </select>
+    </label>
+    <label>対象ツム（1行に1体）<textarea id="planTsums" required></textarea></label>
+    <label>メモ<textarea id="planMemo"></textarea></label>
+    <div class="dialog-actions">
+      <button type="button" id="deletePlanButton" class="danger-button">削除</button>
+      <button type="button" id="cancelPlanButton" class="secondary-button">キャンセル</button>
+      <button type="submit" class="primary-button">保存</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="detailDialog">
   <div class="detail-dialog">
