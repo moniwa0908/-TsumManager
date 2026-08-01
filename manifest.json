@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 7.2.1 Limited",
+  "name": "TsumManager 7.3 Plus & Rewards",
   "short_name": "ツム管理",
-  "description": "ウサプーからケイト・ダイヤモンドまでの期間限定ツムのスキル成長データを反映し、ウサティガーを修正した復旧対応版",
+  "description": "ミッキー＋からガジェットまでのBOX＋・限定・報酬ツムのスキル成長データを反映した復旧対応版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
