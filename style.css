@@ -194,3 +194,28 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 .load-more-button[hidden]{display:none!important}
 .scroll-top-button{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:25;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--accent);font-size:22px;font-weight:900;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s}
 .scroll-top-button.show{opacity:1;pointer-events:auto}
+
+.bottom-nav{grid-template-columns:repeat(7,1fr)}
+.assistant-panel{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--card)),var(--card))}
+.assistant-suggestions{display:flex;flex-direction:column;gap:8px}
+.assistant-card{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border-radius:14px;background:var(--bg)}
+.assistant-card .avatar{width:40px;height:40px;border-radius:12px;font-size:18px}
+.assistant-card strong{display:block}
+.assistant-card small{display:block;color:var(--muted);margin-top:2px}
+.assistant-card button{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:7px 10px;font-weight:800}
+.goal-list{display:flex;flex-direction:column;gap:9px}
+.goal-card{border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:12px}
+.goal-card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.goal-card-head strong{font-size:15px}
+.goal-card-head button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:6px 9px}
+.goal-card-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:5px}
+.goal-progress{height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:9px}
+.goal-progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.goal-warning{margin-top:7px;font-size:11px;color:var(--warn)}
+.ticket-stock{display:grid;grid-template-columns:52px 1fr 52px;gap:10px;align-items:center}
+.ticket-stock button{height:46px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:13px;font-size:24px;font-weight:900}
+.ticket-stock strong{text-align:center;font-size:30px}
+@media(max-width:560px){
+  .bottom-nav button span{font-size:18px}
+  .bottom-nav button b{font-size:8px}
+}

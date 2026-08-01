@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 1.2</title>
+  <title>TsumManager 2.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 1.2</p>
+      <p>TsumManager 2.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -48,6 +48,13 @@
 
 
 
+
+
+      <article class="panel assistant-panel">
+        <div class="section-title"><h2>育成アシスタント</h2><button id="refreshAssistantButton">更新</button></div>
+        <p class="helper">現在の所持数、育成予定、スキルチケット在庫から候補を提案します。</p>
+        <div id="assistantSuggestions" class="assistant-suggestions"></div>
+      </article>
 
       <article class="panel">
         <div class="section-title"><h2>スキルマ目前ランキング</h2><button id="openNearRankingButton">一覧で見る</button></div>
@@ -229,6 +236,30 @@
     </section>
 
 
+
+    <section id="goalsView" class="view" hidden>
+      <article class="panel">
+        <div class="section-title"><h2>育成目標</h2><button id="newGoalButton">新規作成</button></div>
+        <p class="helper">「このツムをスキルマにする」など、目標と期限を登録できます。</p>
+        <div id="goalList" class="goal-list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>スキルチケット在庫</h2>
+        <div class="ticket-stock">
+          <button id="ticketStockMinus">−</button>
+          <strong id="ticketStockValue">0</strong>
+          <button id="ticketStockPlus">＋</button>
+        </div>
+        <p class="helper">在庫数は育成アシスタントと目標シミュレーションに使用します。</p>
+      </article>
+
+      <article class="panel">
+        <h2>目標達成シミュレーション</h2>
+        <div id="goalSimulation" class="simulator-result">目標を登録すると、必要枚数と不足数を表示します。</div>
+      </article>
+    </section>
+
     <section id="plannerView" class="view" hidden>
       <article class="panel">
         <div class="section-title"><h2>ガチャ計画</h2><button id="newPlanButton">新規作成</button></div>
@@ -308,6 +339,7 @@
     <button data-view="collection"><span>▦</span><b>図鑑</b></button>
     <button data-view="list"><span>☷</span><b>一覧</b></button>
     <button data-view="box"><span>＋</span><b>入力</b></button>
+    <button data-view="goals"><span>★</span><b>目標</b></button>
     <button data-view="planner"><span>◎</span><b>計画</b></button>
     <button data-view="settings"><span>⚙</span><b>設定</b></button>
   </nav>
@@ -352,6 +384,35 @@
 
 
 
+
+
+<dialog id="goalDialog">
+  <form id="goalForm">
+    <h2 id="goalDialogTitle">育成目標を作成</h2>
+    <input id="goalId" type="hidden">
+    <label>対象ツム
+      <input id="goalTsumName" required placeholder="ツム名を入力">
+    </label>
+    <label>目標
+      <select id="goalType">
+        <option value="max">スキルマ</option>
+        <option value="owned">指定数まで育成</option>
+      </select>
+    </label>
+    <label id="goalTargetWrap">目標所持数
+      <input id="goalTargetOwned" type="number" min="1" max="999" value="36">
+    </label>
+    <label>期限
+      <input id="goalDeadline" type="date">
+    </label>
+    <label>メモ<textarea id="goalMemo"></textarea></label>
+    <div class="dialog-actions">
+      <button type="button" id="deleteGoalButton" class="danger-button">削除</button>
+      <button type="button" id="cancelGoalButton" class="secondary-button">キャンセル</button>
+      <button type="submit" class="primary-button">保存</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="todayTrainingDialog">
   <div class="message-dialog">

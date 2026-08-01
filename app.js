@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV12", HISTORY_KEY="tsumManagerHistoryV12", RECENT_KEY="tsumManagerRecentV12", PLAN_KEY="tsumManagerPlansV12", TODAY_KEY="tsumManagerTodayV12", UNDO_KEY="tsumManagerUndoV12";
+const KEYS=["tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV20", HISTORY_KEY="tsumManagerHistoryV20", RECENT_KEY="tsumManagerRecentV20", PLAN_KEY="tsumManagerPlansV20", TODAY_KEY="tsumManagerTodayV20", UNDO_KEY="tsumManagerUndoV20", GOAL_KEY="tsumManagerGoalsV20", TICKET_STOCK_KEY="tsumManagerTicketStockV20";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -29,6 +29,8 @@ let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
 let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
 let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catch(e){return[]}})();
+let goals=(()=>{try{return JSON.parse(localStorage.getItem(GOAL_KEY)||"[]")}catch(e){return[]}})();
+let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,increment=1;
@@ -37,6 +39,8 @@ function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
 function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
 function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
+function saveGoals(){localStorage.setItem(GOAL_KEY,JSON.stringify(goals))}
+function saveTicketStock(){localStorage.setItem(TICKET_STOCK_KEY,String(ticketStock))}
 function saveToday(){todayTrainingId?localStorage.setItem(TODAY_KEY,todayTrainingId):localStorage.removeItem(TODAY_KEY)}
 function saveUndo(){undoState?localStorage.setItem(UNDO_KEY,JSON.stringify(undoState)):localStorage.removeItem(UNDO_KEY)}
 function setUndo(description,changes){
@@ -85,6 +89,7 @@ function showView(view){
   if(view==="box")renderBox();
   if(view==="training")renderTraining();
   if(view==="stats")renderStats();
+  if(view==="goals")renderGoals();
   if(view==="planner")renderPlanner();
   if(view==="settings")renderSettings();
   scrollTo({top:0,behavior:"smooth"});
@@ -161,6 +166,9 @@ function renderHome(){
   $("#nearCount").textContent=near.length+"体";$("#unownedCount").textContent=tsums.filter(t=>t.owned===0).length+"体";
   const nearRanking=tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)||pct(b)-pct(a)).slice(0,5);
   const coinRanking=tsums.filter(t=>remain(t)>0).sort((a,b)=>remain(b)-remain(a)||a.name.localeCompare(b.name,"ja")).slice(0,5);
+  const assistantCandidates=buildAssistantSuggestions();
+  $("#assistantSuggestions").innerHTML=assistantCandidates.map(x=>`<div class="assistant-card"><div class="avatar">${avatarHtml(x.t)}</div><div><strong>${esc(x.t.name)}</strong><small>${esc(x.reason)}</small></div><button data-assistant-id="${x.t.id}">詳細</button></div>`).join("")||`<div class="helper">提案できる育成候補がありません。</div>`;
+  $("#assistantSuggestions").querySelectorAll("[data-assistant-id]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.assistantId);if(t)openDetail(t)});
   $("#nearRankingList").innerHTML=nearRanking.map((t,i)=>rankingHtml(t,i+1,`あと${remain(t)}体`)).join("")||`<div class="helper">育成中のツムがありません。</div>`;
   $("#coinRankingList").innerHTML=coinRanking.map((t,i)=>rankingHtml(t,i+1,`${(remain(t)*30000).toLocaleString("ja-JP")}コイン`)).join("")||`<div class="helper">対象ツムがありません。</div>`;
   document.querySelectorAll(".ranking-item button").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.rankingId);if(t)openDetail(t)});
@@ -177,6 +185,58 @@ function rankingHtml(t,rank,caption){
 function miniHtml(t,recommend=false){
   return `<div class="mini-item"><div class="avatar">${avatarHtml(t)}</div><div><strong>${esc(t.name)}</strong><small>${recommend?'<span class="recommend-badge">育成候補</span> ':''}残り${remain(t)} ・ ${pct(t)}%</small></div><button data-name="${esc(t.name)}">表示</button></div>`;
 }
+
+
+function buildAssistantSuggestions(){
+  const rows=[];
+  const seen=new Set();
+  const add=(t,reason)=>{if(t&&!seen.has(t.id)&&remain(t)>0){seen.add(t.id);rows.push({t,reason})}};
+  const today=tsums.find(t=>t.id===todayTrainingId);
+  if(today)add(today,"今日の育成に設定されています");
+  goals.filter(g=>g.type==="max").forEach(g=>add(tsums.find(t=>t.name===g.tsumName),"育成目標に登録されています"));
+  tsums.filter(t=>t.priority>0&&remain(t)>0).sort((a,b)=>a.priority-b.priority||remain(a)-remain(b)).slice(0,2).forEach(t=>add(t,`${priorityText(t.priority)}に設定されています`));
+  tsums.filter(t=>t.owned>0&&remain(t)>0&&remain(t)<=ticketStock).sort((a,b)=>remain(a)-remain(b)).slice(0,3).forEach(t=>add(t,`スキルチケット${remain(t)}枚でスキルマ可能`));
+  tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)).slice(0,3).forEach(t=>add(t,`スキルマまであと${remain(t)}体`));
+  return rows.slice(0,5);
+}
+function goalTarget(goal,t){
+  if(goal.type==="max")return t.required;
+  return Math.min(t.required,Math.max(1,Number(goal.targetOwned)||t.required));
+}
+function renderGoals(){
+  $("#ticketStockValue").textContent=ticketStock;
+  $("#goalList").innerHTML=goals.length?goals.map(g=>{
+    const t=tsums.find(x=>x.name===g.tsumName);
+    if(!t)return `<article class="goal-card"><div class="goal-card-head"><strong>${esc(g.tsumName)}</strong><button data-edit-goal="${g.id}">編集</button></div><div class="goal-warning">登録ツムが見つかりません。</div></article>`;
+    const target=goalTarget(g,t),need=Math.max(0,target-t.owned),p=Math.min(100,Math.round(t.owned/target*100));
+    const deadline=g.deadline?new Date(g.deadline+"T00:00:00"):null;
+    const days=deadline?Math.ceil((deadline-new Date())/86400000):null;
+    return `<article class="goal-card">
+      <div class="goal-card-head"><strong>${esc(t.name)}</strong><button data-edit-goal="${g.id}">編集</button></div>
+      <div class="goal-card-meta"><span>${g.type==="max"?"スキルマ":`所持数${target}`}</span><span>残り${need}</span>${g.deadline?`<span>期限 ${esc(g.deadline)}</span>`:""}</div>
+      <div class="goal-progress"><i style="width:${p}%"></i></div>
+      ${days!==null&&days<0?`<div class="goal-warning">期限を過ぎています。</div>`:days!==null?`<div class="goal-warning">期限まであと${days}日</div>`:""}
+    </article>`;
+  }).join(""):`<div class="helper">育成目標はまだありません。</div>`;
+  $("#goalList").querySelectorAll("[data-edit-goal]").forEach(b=>b.onclick=()=>{const g=goals.find(x=>x.id===b.dataset.editGoal);if(g)openGoal(g)});
+  const active=goals.map(g=>{const t=tsums.find(x=>x.name===g.tsumName);if(!t)return null;return{g,t,need:Math.max(0,goalTarget(g,t)-t.owned)}}).filter(Boolean);
+  const totalNeed=active.reduce((s,x)=>s+x.need,0);
+  const completable=active.filter(x=>x.need<=ticketStock).sort((a,b)=>a.need-b.need);
+  $("#goalSimulation").innerHTML=active.length?`登録目標：${active.length}件<br>目標達成に必要：${totalNeed}枚<br>スキルチケット在庫：${ticketStock}枚<br>不足：${Math.max(0,totalNeed-ticketStock)}枚<br><br>${completable.length?`現在の在庫で達成可能：<br>${completable.map(x=>`${esc(x.t.name)}（${x.need}枚）`).join("<br>")}`:"現在の在庫だけで達成できる目標はありません。"}`:`目標を登録すると、必要枚数と不足数を表示します。`;
+}
+function openGoal(goal=null){
+  $("#goalDialogTitle").textContent=goal?"育成目標を編集":"育成目標を作成";
+  $("#goalId").value=goal?.id||"";
+  $("#goalTsumName").value=goal?.tsumName||"";
+  $("#goalType").value=goal?.type||"max";
+  $("#goalTargetOwned").value=goal?.targetOwned||36;
+  $("#goalDeadline").value=goal?.deadline||"";
+  $("#goalMemo").value=goal?.memo||"";
+  $("#deleteGoalButton").style.display=goal?"":"none";
+  toggleGoalTarget();
+  $("#goalDialog").showModal();
+}
+function toggleGoalTarget(){$("#goalTargetWrap").style.display=$("#goalType").value==="owned"?"grid":"none"}
 
 function renderCollection(){
   const q=$("#collectionSearch").value.trim().toLowerCase();
@@ -333,6 +393,7 @@ function renderAll(){
   if(activeView==="list")renderList();
   if(activeView==="training")renderTraining();
   if(activeView==="stats")renderStats();
+  if(activeView==="goals")renderGoals();
   if(activeView==="planner")renderPlanner();
   if(activeView==="box")renderBox();
 }
@@ -548,15 +609,15 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"1.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"2.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;save();saveHistory();saveRecent();savePlans();saveToday();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveToday();saveUndo();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveToday();saveUndo();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{
@@ -577,6 +638,28 @@ $("#applyQuickOwnedButton").onclick=()=>{
   else toast(`${updated}体を更新しました`);
 };
 
+
+
+$("#refreshAssistantButton").onclick=()=>{renderHome();toast("育成候補を更新しました")};
+$("#newGoalButton").onclick=()=>openGoal();
+$("#goalType").onchange=toggleGoalTarget;
+$("#cancelGoalButton").onclick=()=>$("#goalDialog").close();
+$("#goalForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=$("#goalTsumName").value.trim();
+  const t=tsums.find(x=>x.name===name);
+  if(!t&&!confirm("登録済みツムと名前が一致しません。このまま保存しますか？"))return;
+  const id=$("#goalId").value||crypto.randomUUID();
+  const obj={id,tsumName:name,type:$("#goalType").value,targetOwned:Number($("#goalTargetOwned").value)||36,deadline:$("#goalDeadline").value,memo:$("#goalMemo").value.trim()};
+  const i=goals.findIndex(g=>g.id===id);if(i>=0)goals[i]=obj;else goals.push(obj);
+  saveGoals();$("#goalDialog").close();renderGoals();renderHome();toast("育成目標を保存しました");
+};
+$("#deleteGoalButton").onclick=()=>{
+  const id=$("#goalId").value;
+  if(id&&confirm("この育成目標を削除しますか？")){goals=goals.filter(g=>g.id!==id);saveGoals();$("#goalDialog").close();renderGoals();renderHome()}
+};
+$("#ticketStockMinus").onclick=()=>{ticketStock=Math.max(0,ticketStock-1);saveTicketStock();renderGoals();renderHome()};
+$("#ticketStockPlus").onclick=()=>{ticketStock++;saveTicketStock();renderGoals();renderHome()};
 
 $("#loadMoreCollectionButton").onclick=()=>{collectionLimit+=60;renderCollection()};
 $("#openNearRankingButton").onclick=()=>{status="near";showView("list")};
