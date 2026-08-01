@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV521", HISTORY_KEY="tsumManagerHistoryV521", RECENT_KEY="tsumManagerRecentV521", PLAN_KEY="tsumManagerPlansV521", TODAY_KEY="tsumManagerTodayV521", UNDO_KEY="tsumManagerUndoV521", GOAL_KEY="tsumManagerGoalsV521", TICKET_STOCK_KEY="tsumManagerTicketStockV521", SNAPSHOT_KEY="tsumManagerSnapshotsV521", TASK_KEY="tsumManagerTasksV521", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV521";
+const KEYS=["tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV53", HISTORY_KEY="tsumManagerHistoryV53", RECENT_KEY="tsumManagerRecentV53", PLAN_KEY="tsumManagerPlansV53", TODAY_KEY="tsumManagerTodayV53", UNDO_KEY="tsumManagerUndoV53", GOAL_KEY="tsumManagerGoalsV53", TICKET_STOCK_KEY="tsumManagerTicketStockV53", SNAPSHOT_KEY="tsumManagerSnapshotsV53", TASK_KEY="tsumManagerTasksV53", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV53";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -607,27 +607,41 @@ function openEdit(t=null){
   $("#editMissionTags").value=(t?.missionTags||[]).join(",");$("#editMemo").value=t?.memo||"";
   editingImage=t?.image||"";renderImagePreview();$("#deleteButton").style.display=t?"":"none";$("#editDialog").showModal();
 }
-function renderImagePreview(){$("#imagePreview").innerHTML=editingImage?`<img src="${editingImage}" alt="">`:""}
-$("#editImageInput").onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  if(!f.type.startsWith("image/")){alert("画像ファイルを選択してください");return}
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      const size=320,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
-      canvas.width=size;canvas.height=size;
-      const scale=Math.max(size/img.width,size/img.height);
-      const w=img.width*scale,h=img.height*scale;
-      ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-      editingImage=canvas.toDataURL("image/jpeg",0.82);
-      renderImagePreview();
-      toast("画像を登録しました");
+function renderImagePreview(){
+  const zone=$("#imagePreview");
+  zone.innerHTML=editingImage?`<img src="${editingImage}" alt="登録画像">`:`<span>画像をタップして選択</span>`;
+}
+
+function compressImageFile(file){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type.startsWith("image/")){reject(new Error("画像ファイルではありません"));return}
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error("画像を読み込めませんでした"));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error("画像を開けませんでした"));
+      img.onload=()=>{
+        const size=360,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+        canvas.width=size;canvas.height=size;
+        const scale=Math.max(size/img.width,size/img.height);
+        const w=img.width*scale,h=img.height*scale;
+        ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+        resolve(canvas.toDataURL("image/jpeg",0.82));
+      };
+      img.src=reader.result;
     };
-    img.src=reader.result;
-  };
-  reader.readAsDataURL(f);
-};
+    reader.readAsDataURL(file);
+  });
+}
+async function applySelectedImage(file){
+  try{
+    editingImage=await compressImageFile(file);
+    renderImagePreview();
+    toast("画像を登録しました");
+  }catch(err){alert(err.message)}
+}
+$("#editImageInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
+$("#editCameraInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editForm").onsubmit=e=>{
   e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
   coinRating:$("#editCoinRating").value,scoreRating:$("#editScoreRating").value,easeRating:$("#editEaseRating").value,
@@ -792,6 +806,41 @@ $("#calcQuickPlanButton").onclick=()=>{
   $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
 };
 
+
+$("#imagePreview").onclick=()=>$("#editImageInput").click();
+$("#imagePreview").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("#editImageInput").click()}};
+["dragenter","dragover"].forEach(type=>$("#imagePreview").addEventListener(type,e=>{e.preventDefault();$("#imagePreview").classList.add("dragover")}));
+["dragleave","drop"].forEach(type=>$("#imagePreview").addEventListener(type,e=>{e.preventDefault();$("#imagePreview").classList.remove("dragover")}));
+$("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)applySelectedImage(f)});
+
+function normalizeImageFileName(name){
+  return name.replace(/\.[^.]+$/,"").trim()
+    .replace(/[_-]+/g," ")
+    .replace(/\s+/g," ")
+    .toLowerCase();
+}
+$("#bulkImageInput").onchange=async e=>{
+  const files=[...e.target.files];
+  if(!files.length)return;
+  let matched=0,unmatched=[],failed=[];
+  for(const file of files){
+    const base=normalizeImageFileName(file.name);
+    const t=tsums.find(x=>{
+      const name=normalizeImageFileName(x.name);
+      return name===base||name.replace(/\s/g,"")===base.replace(/\s/g,"");
+    });
+    if(!t){unmatched.push(file.name);continue}
+    try{
+      t.image=await compressImageFile(file);
+      matched++;
+    }catch(err){failed.push(file.name)}
+  }
+  save();renderAll();
+  $("#bulkImageResult").innerHTML=`登録成功：${matched}件<br>名前不一致：${unmatched.length}件<br>読込失敗：${failed.length}件${unmatched.length?`<br><br>名前不一致：<br>${unmatched.slice(0,20).map(esc).join("<br>")}${unmatched.length>20?"<br>ほか":""}`:""}`;
+  toast(`${matched}体の画像を登録しました`);
+  e.target.value="";
+};
+
 $("#removeImageButton").onclick=()=>{
   if(!editingImage){toast("画像は登録されていません");return}
   editingImage="";
@@ -816,7 +865,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.2.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

@@ -283,3 +283,14 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 .release-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .release-label{display:inline-block;margin-top:4px;color:var(--muted);font-size:11px}
 @media(max-width:560px){.release-filter-row{grid-template-columns:1fr 1fr}}
+
+.image-edit-section{display:grid;gap:9px}
+.field-label{color:var(--muted);font-size:12px}
+.image-drop-zone{min-height:150px;border:2px dashed var(--line);border-radius:18px;background:var(--bg);display:grid;place-items:center;cursor:pointer;overflow:hidden;text-align:center;color:var(--muted)}
+.image-drop-zone.dragover{border-color:var(--accent);background:var(--accent-soft)}
+.image-drop-zone img{width:150px;height:150px;object-fit:cover;border-radius:18px}
+.image-action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.image-file-button{display:grid;place-items:center;text-align:center}
+.image-file-button input{display:none}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);padding:2px 5px;border-radius:6px}
+@media(max-width:560px){.image-action-grid{grid-template-columns:1fr 1fr}.image-action-grid button{grid-column:1/-1}}

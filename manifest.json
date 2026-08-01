@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 5.2.1",
+  "name": "TsumManager 5.3",
   "short_name": "ツム管理",
-  "description": "一覧表示不具合を修正し、登場年月データの引継ぎを改善した個人用ツム管理Webアプリ",
+  "description": "写真選択・カメラ撮影・ドラッグ＆ドロップ・画像一括登録に対応した個人用ツム管理Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 5.2.1</title>
+  <title>TsumManager 5.3</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 5.2.1</p>
+      <p>TsumManager 5.3</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -390,6 +390,16 @@
       </article>
 
 
+
+      <article class="panel settings-panel">
+        <h2>画像の一括登録</h2>
+        <p class="helper">複数画像を選択すると、ファイル名とツム名が一致する画像を自動登録します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
+        <label class="file-button">複数画像を選択
+          <input id="bulkImageInput" type="file" accept="image/*" multiple>
+        </label>
+        <div id="bulkImageResult" class="result-box">まだ画像は選択されていません。</div>
+      </article>
+
       <article class="panel settings-panel">
         <h2>画像管理</h2>
         <p class="helper">登録済み画像の確認・削除ができます。画像はSafari内に保存されます。</p>
@@ -456,9 +466,22 @@
         </select>
       </label>
     </div>
-    <label>ツム画像<input id="editImageInput" type="file" accept="image/*"></label>
-    <div id="imagePreview" class="image-preview"></div>
-    <button type="button" id="removeImageButton" class="secondary-button">画像を削除</button>
+    <div class="image-edit-section">
+      <span class="field-label">ツム画像</span>
+      <div id="imagePreview" class="image-preview image-drop-zone" tabindex="0">
+        <span>画像をタップして選択</span>
+      </div>
+      <div class="image-action-grid">
+        <label class="secondary-button image-file-button">写真から選ぶ
+          <input id="editImageInput" type="file" accept="image/*">
+        </label>
+        <label class="secondary-button image-file-button">カメラで撮る
+          <input id="editCameraInput" type="file" accept="image/*" capture="environment">
+        </label>
+        <button type="button" id="removeImageButton" class="secondary-button">画像を削除</button>
+      </div>
+      <p class="helper">iPhoneは画像部分をタップして写真を選択できます。PCは画像をドラッグ＆ドロップできます。</p>
+    </div>
     <label>タグ（カンマ区切り）
       <input id="editTags" placeholder="例：プリンセス,スターウォーズ">
     </label>
