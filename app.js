@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV631", HISTORY_KEY="tsumManagerHistoryV631", RECENT_KEY="tsumManagerRecentV631", PLAN_KEY="tsumManagerPlansV631", TODAY_KEY="tsumManagerTodayV631", UNDO_KEY="tsumManagerUndoV631", GOAL_KEY="tsumManagerGoalsV631", TICKET_STOCK_KEY="tsumManagerTicketStockV631", SNAPSHOT_KEY="tsumManagerSnapshotsV631", TASK_KEY="tsumManagerTasksV631", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV631", BACKUP_META_KEY="tsumManagerBackupMetaV631";
+const KEYS=["tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV632", HISTORY_KEY="tsumManagerHistoryV632", RECENT_KEY="tsumManagerRecentV632", PLAN_KEY="tsumManagerPlansV632", TODAY_KEY="tsumManagerTodayV632", UNDO_KEY="tsumManagerUndoV632", GOAL_KEY="tsumManagerGoalsV632", TICKET_STOCK_KEY="tsumManagerTicketStockV632", SNAPSHOT_KEY="tsumManagerSnapshotsV632", TASK_KEY="tsumManagerTasksV632", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV632", BACKUP_META_KEY="tsumManagerBackupMetaV632";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -1052,7 +1052,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1105,18 +1105,24 @@ $("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,vie
 document.querySelectorAll("[data-ranking-type]").forEach(b=>b.onclick=()=>{rankingType=b.dataset.rankingType;renderStrategy()});
 $("#rankingOwnedOnlyButton").onclick=()=>{rankingOwnedOnly=!rankingOwnedOnly;renderStrategy()};
 $("#missionSearchInput").oninput=renderMissionSearch;
-$("#calculateProbabilityButton").onclick=()=>{
-  const total=Math.max(1,Number($("#probTsumCount").value)||1);
-  const target=Math.max(1,Math.min(total,Number($("#probTargetCount").value)||1));
-  const draws=Math.max(1,Number($("#probDrawCount").value)||1);
-  const cost=Math.max(1,Number($("#probBoxCost").value)||30000);
-  const p=target/total;
-  const atLeastOne=1-Math.pow(1-p,draws);
-  const expected=draws*p;
-  const fifty=Math.ceil(Math.log(0.5)/Math.log(1-p));
-  const ninety=Math.ceil(Math.log(0.1)/Math.log(1-p));
-  $("#probabilityResult").innerHTML=`1回あたりの当選確率：${(p*100).toFixed(2)}%<br>${draws}回で1体以上引ける確率：${(atLeastOne*100).toFixed(2)}%<br>期待獲得数：${expected.toFixed(2)}体<br>50%到達の目安：${fifty}回（${(fifty*cost).toLocaleString("ja-JP")}コイン）<br>90%到達の目安：${ninety}回（${(ninety*cost).toLocaleString("ja-JP")}コイン）`;
-};
+const probabilityButton=$("#calculateProbabilityButton");
+if(probabilityButton){
+  probabilityButton.onclick=()=>{
+    const total=Math.max(1,Number($("#probTsumCount")?.value)||1);
+    const target=Math.max(1,Math.min(total,Number($("#probTargetCount")?.value)||1));
+    const draws=Math.max(1,Number($("#probDrawCount")?.value)||1);
+    const cost=Math.max(1,Number($("#probBoxCost")?.value)||30000);
+    const p=target/total;
+    const atLeastOne=1-Math.pow(1-p,draws);
+    const expected=draws*p;
+    const fifty=Math.ceil(Math.log(0.5)/Math.log(1-p));
+    const ninety=Math.ceil(Math.log(0.1)/Math.log(1-p));
+    const result=$("#probabilityResult");
+    if(result){
+      result.innerHTML=`1回あたりの当選確率：${(p*100).toFixed(2)}%<br>${draws}回で1体以上引ける確率：${(atLeastOne*100).toFixed(2)}%<br>期待獲得数：${expected.toFixed(2)}体<br>50%到達の目安：${fifty}回（${(fifty*cost).toLocaleString("ja-JP")}コイン）<br>90%到達の目安：${ninety}回（${(ninety*cost).toLocaleString("ja-JP")}コイン）`;
+    }
+  };
+}
 
 $("#saveSnapshotButton").onclick=createSnapshot;
 $("#deleteLastSnapshotButton").onclick=()=>{
@@ -1171,7 +1177,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3.1",
+    version:"6.3.2",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1278,7 +1284,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"6.3.1",
+      version:"6.3.2",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1353,6 +1359,8 @@ function renderBackupSummary(){
   }
 }
 function renderStorageHealth(){
+  const holder=$("#storageHealth");
+  if(!holder)return;
   const images=tsums.filter(t=>t.image).length;
   let approx=0;
   try{
@@ -1362,7 +1370,7 @@ function renderStorageHealth(){
     }
   }catch(e){}
   const lastBackup=localStorage.getItem(BACKUP_META_KEY);
-  $("#storageHealth").innerHTML=`<div><b>ブラウザ内保存</b><span>推定使用量：約${formatBytes(approx*2)}</span></div><div><b>画像登録 ${images}体</b><span>Safariの履歴・Webサイトデータを消去すると失われる可能性があります。</span></div><div><b>${lastBackup?"バックアップ作成済み":"バックアップ未作成"}</b><span>${lastBackup?"更新前にも再作成してください。":"今すぐ完全バックアップを作成してください。"}</span></div>`;
+  holder.innerHTML=`<div><b>ブラウザ内保存</b><span>推定使用量：約${formatBytes(approx*2)}</span></div><div><b>画像登録 ${images}体</b><span>Safariの履歴・Webサイトデータを消去すると失われる可能性があります。</span></div><div><b>${lastBackup?"バックアップ作成済み":"バックアップ未作成"}</b><span>${lastBackup?"更新前にも再作成してください。":"今すぐ完全バックアップを作成してください。"}</span></div>`;
 }
 
 function csvEscape(value){
@@ -1378,7 +1386,17 @@ $("#quickBackupButton").onclick=async e=>{
   e.preventDefault();
   await exportFullBackup("TsumManager_UpdateBefore",true);
 };
-$("#checkStorageButton").onclick=()=>{renderStorageHealth();toast("保存状態を確認しました")};
+const backupTestButton=$("#backupTestButton");
+if(backupTestButton){
+  backupTestButton.onclick=()=>{
+    $("#backupStatus").innerHTML="ボタンは正常に反応しています。続けて「更新前クイックバックアップ」を押してください。";
+    toast("バックアップボタンは反応しています");
+  };
+}
+const checkStorageButton=$("#checkStorageButton");
+if(checkStorageButton){
+  checkStorageButton.onclick=()=>{renderStorageHealth();toast("保存状態を確認しました")};
+}
 $("#importFullBackupInput").onchange=e=>{
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
