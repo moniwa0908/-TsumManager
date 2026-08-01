@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 4.0</title>
+  <title>TsumManager 5.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 4.0</p>
+      <p>TsumManager 5.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -51,10 +51,24 @@
 
 
 
+
+      <article class="panel">
+        <div class="section-title"><h2>今日のタスク</h2><button id="addTaskButton">追加</button></div>
+        <div id="dailyTaskList" class="task-list"></div>
+        <div class="task-progress"><i id="taskProgressBar"></i></div>
+        <p id="taskProgressText" class="helper"></p>
+      </article>
+
       <article class="panel">
         <div class="section-title"><h2>進捗記録</h2><button id="saveSnapshotButton">現在を記録</button></div>
         <div id="snapshotSummary" class="snapshot-summary"></div>
         <div id="snapshotChart" class="snapshot-chart"></div>
+      </article>
+
+
+      <article class="panel">
+        <div class="section-title"><h2>月次成長レポート</h2><button id="refreshMonthlyReportButton">更新</button></div>
+        <div id="monthlyReport" class="monthly-report"></div>
       </article>
 
       <article class="panel assistant-panel">
@@ -340,6 +354,13 @@
 
 
 
+
+      <article class="panel settings-panel">
+        <h2>操作取り消し履歴</h2>
+        <div id="undoHistoryList" class="history-list"></div>
+        <button id="clearUndoHistoryButton" class="danger-button">取り消し履歴を削除</button>
+      </article>
+
       <article class="panel settings-panel">
         <h2>進捗記録管理</h2>
         <p class="helper">記録はバックアップにも含まれます。</p>
@@ -470,6 +491,22 @@
 
 
 
+
+<dialog id="taskDialog">
+  <form id="taskForm">
+    <h2 id="taskDialogTitle">今日のタスクを追加</h2>
+    <input id="taskId" type="hidden">
+    <label>タスク名<input id="taskTitle" required placeholder="例：プレミアムBOXを5回引く"></label>
+    <label>関連ツム（任意）<input id="taskTsumName" placeholder="例：ガストン"></label>
+    <label>回数・枚数（任意）<input id="taskTarget" type="number" min="0" value="1"></label>
+    <div class="dialog-actions">
+      <button type="button" id="deleteTaskButton" class="danger-button">削除</button>
+      <button type="button" id="cancelTaskButton" class="secondary-button">キャンセル</button>
+      <button type="submit" class="primary-button">保存</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="goalDialog">
   <form id="goalForm">
     <h2 id="goalDialogTitle">育成目標を作成</h2>
@@ -568,6 +605,17 @@
       <button id="detailEditButton" class="secondary-button">編集</button>
       <button id="closeDetailButton" class="primary-button">閉じる</button>
     </div>
+  </div>
+</dialog>
+
+
+<dialog id="imageViewerDialog">
+  <div class="image-viewer-dialog">
+    <button id="closeImageViewerButton" class="viewer-close">×</button>
+    <button id="prevImageButton" class="viewer-nav viewer-prev">‹</button>
+    <img id="viewerImage" alt="">
+    <button id="nextImageButton" class="viewer-nav viewer-next">›</button>
+    <strong id="viewerName"></strong>
   </div>
 </dialog>
 

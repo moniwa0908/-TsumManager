@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 4.0",
+  "name": "TsumManager 5.0",
   "short_name": "ツム管理",
-  "description": "ツムツムの図鑑・個人評価・攻略ランキング・BOX確率を管理する個人用Webアプリ",
+  "description": "ツムツムの図鑑・今日のタスク・育成アシスタント・月次成長を管理する個人用Webアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV40", HISTORY_KEY="tsumManagerHistoryV40", RECENT_KEY="tsumManagerRecentV40", PLAN_KEY="tsumManagerPlansV40", TODAY_KEY="tsumManagerTodayV40", UNDO_KEY="tsumManagerUndoV40", GOAL_KEY="tsumManagerGoalsV40", TICKET_STOCK_KEY="tsumManagerTicketStockV40", SNAPSHOT_KEY="tsumManagerSnapshotsV40";
+const KEYS=["tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV50", HISTORY_KEY="tsumManagerHistoryV50", RECENT_KEY="tsumManagerRecentV50", PLAN_KEY="tsumManagerPlansV50", TODAY_KEY="tsumManagerTodayV50", UNDO_KEY="tsumManagerUndoV50", GOAL_KEY="tsumManagerGoalsV50", TICKET_STOCK_KEY="tsumManagerTicketStockV50", SNAPSHOT_KEY="tsumManagerSnapshotsV50", TASK_KEY="tsumManagerTasksV50", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV50";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -36,6 +36,9 @@ let plans=(()=>{try{return JSON.parse(localStorage.getItem(PLAN_KEY)||"[]")}catc
 let goals=(()=>{try{return JSON.parse(localStorage.getItem(GOAL_KEY)||"[]")}catch(e){return[]}})();
 let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
 let snapshots=(()=>{try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"[]")}catch(e){return[]}})();
+let dailyTasks=(()=>{try{return JSON.parse(localStorage.getItem(TASK_KEY)||"[]")}catch(e){return[]}})();
+let undoHistory=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_HISTORY_KEY)||"[]")}catch(e){return[]}})();
+let viewerIndex=0;
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,increment=1;
@@ -47,12 +50,16 @@ function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
 function saveGoals(){localStorage.setItem(GOAL_KEY,JSON.stringify(goals))}
 function saveTicketStock(){localStorage.setItem(TICKET_STOCK_KEY,String(ticketStock))}
 function saveSnapshots(){localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snapshots.slice(-60)))}
+function saveTasks(){localStorage.setItem(TASK_KEY,JSON.stringify(dailyTasks))}
+function saveUndoHistory(){localStorage.setItem(UNDO_HISTORY_KEY,JSON.stringify(undoHistory.slice(0,20)))}
 function saveToday(){todayTrainingId?localStorage.setItem(TODAY_KEY,todayTrainingId):localStorage.removeItem(TODAY_KEY)}
 function saveUndo(){undoState?localStorage.setItem(UNDO_KEY,JSON.stringify(undoState)):localStorage.removeItem(UNDO_KEY)}
 function setUndo(description,changes){
   undoState={description,changes,time:new Date().toISOString()};
-  saveUndo();
-  renderUndo();
+  undoHistory.unshift(JSON.parse(JSON.stringify(undoState)));
+  undoHistory=undoHistory.slice(0,20);
+  saveUndo();saveUndoHistory();
+  renderUndo();renderUndoHistory();
 }
 function renderUndo(){
   const button=$("#undoButton"),desc=$("#undoDescription");
@@ -105,7 +112,7 @@ function avatarHtml(t){return t.image?`<img src="${esc(t.image)}" alt="">`:esc(t
 function cardHtml(t){
   const tag=priorityText(t.priority);
   return `<article class="tsum-card ${remain(t)>0&&remain(t)<=5?"near-max":""}">
-    <button class="avatar" data-action="detail" data-id="${t.id}">${avatarHtml(t)}</button>
+    <button class="avatar" data-action="${t.image?"viewer":"detail"}" data-id="${t.id}">${avatarHtml(t)}</button>
     <div>
       <div class="title-row">
         <button class="star ${t.favorite?"on":""}" data-action="favorite" data-id="${t.id}">★</button>
@@ -142,6 +149,7 @@ function handleCardAction(action,id){
     const before=t.favorite;t.favorite=!t.favorite;
     setUndo(`${t.name}のお気に入り変更を取り消す`,[{id:t.id,favorite:before}]);
   }
+  if(action==="viewer"){touchRecent(t.id);openImageViewer(t);return}
   if(action==="detail"){touchRecent(t.id);openDetail(t);return}
   if(action==="edit"){touchRecent(t.id);openEdit(t);return}
   touchRecent(t.id);
@@ -160,6 +168,8 @@ function renderHome(){
   const s=summary();
   $("#homePercent").textContent=s.percent+"%";$("#ringPercent").textContent=s.percent+"%";
   renderSnapshots();
+  renderDailyTasks();
+  renderMonthlyReport();
   const today=tsums.find(t=>t.id===todayTrainingId);
   $("#todayTrainingCard").innerHTML=today?`<div class="avatar">${avatarHtml(today)}</div><div><strong>${esc(today.name)}</strong><small>${skillText(today)} ・ 残り${remain(today)} ・ ${pct(today)}%</small></div><button data-today-detail="${today.id}">詳細</button>`:`<div class="helper">今日の育成ツムは未設定です。</div>`;
   $("#todayTrainingCard").querySelectorAll("[data-today-detail]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.todayDetail);if(t)openDetail(t)});
@@ -198,6 +208,66 @@ function miniHtml(t,recommend=false){
 
 
 
+
+function renderDailyTasks(){
+  const list=$("#dailyTaskList");if(!list)return;
+  list.innerHTML=dailyTasks.length?dailyTasks.map(t=>`<div class="task-item ${t.done?"done":""}">
+    <input type="checkbox" data-task-check="${t.id}" ${t.done?"checked":""}>
+    <div><strong>${esc(t.title)}</strong><small>${t.tsumName?esc(t.tsumName)+" ・ ":""}${t.target?`目標 ${t.target}`:""}</small></div>
+    <button data-edit-task="${t.id}">編集</button>
+  </div>`).join(""):`<div class="helper">今日のタスクはありません。</div>`;
+  list.querySelectorAll("[data-task-check]").forEach(c=>c.onchange=()=>{const t=dailyTasks.find(x=>x.id===c.dataset.taskCheck);if(t){t.done=c.checked;saveTasks();renderDailyTasks()}});
+  list.querySelectorAll("[data-edit-task]").forEach(b=>b.onclick=()=>{const t=dailyTasks.find(x=>x.id===b.dataset.editTask);if(t)openTask(t)});
+  const done=dailyTasks.filter(t=>t.done).length,total=dailyTasks.length,p=total?Math.round(done/total*100):0;
+  $("#taskProgressBar").style.width=p+"%";
+  $("#taskProgressText").textContent=total?`${done}/${total}件完了（${p}%）`:"";
+}
+function openTask(task=null){
+  $("#taskDialogTitle").textContent=task?"今日のタスクを編集":"今日のタスクを追加";
+  $("#taskId").value=task?.id||"";
+  $("#taskTitle").value=task?.title||"";
+  $("#taskTsumName").value=task?.tsumName||"";
+  $("#taskTarget").value=task?.target||1;
+  $("#deleteTaskButton").style.display=task?"":"none";
+  $("#taskDialog").showModal();
+}
+function renderMonthlyReport(){
+  const el=$("#monthlyReport");if(!el)return;
+  const now=new Date(),month=now.getMonth(),year=now.getFullYear();
+  const monthRows=snapshots.filter(s=>{const d=new Date(s.date);return d.getMonth()===month&&d.getFullYear()===year});
+  const first=monthRows[0],last=monthRows[monthRows.length-1];
+  const ownedDiff=first&&last?last.ownedTsums-first.ownedTsums:0;
+  const maxDiff=first&&last?last.maxed-first.maxed:0;
+  const progressDiff=first&&last?last.percent-first.percent:0;
+  const taskDone=dailyTasks.filter(t=>t.done).length;
+  el.innerHTML=`<div><b>${ownedDiff>=0?"+":""}${ownedDiff}</b><span>所持ツム増加</span></div><div><b>${maxDiff>=0?"+":""}${maxDiff}</b><span>スキルマ増加</span></div><div><b>${progressDiff>=0?"+":""}${progressDiff}%</b><span>進捗増加</span></div><div><b>${taskDone}</b><span>今日の完了タスク</span></div>`;
+}
+function renderUndoHistory(){
+  const el=$("#undoHistoryList");if(!el)return;
+  el.innerHTML=undoHistory.length?undoHistory.map((u,i)=>`<div class="history-item"><span>${esc(u.description)}</span><span>${new Date(u.time).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span><button data-undo-history-index="${i}">戻す</button></div>`).join(""):`<div class="helper">取り消し履歴はありません。</div>`;
+  el.querySelectorAll("[data-undo-history-index]").forEach(b=>b.onclick=()=>applyUndoHistory(Number(b.dataset.undoHistoryIndex)));
+}
+function applyUndoHistory(index){
+  const u=undoHistory[index];if(!u||!Array.isArray(u.changes))return;
+  for(const c of u.changes){
+    const t=tsums.find(x=>x.id===c.id);if(!t)continue;
+    if(Number.isFinite(c.owned))t.owned=c.owned;
+    if(typeof c.favorite==="boolean")t.favorite=c.favorite;
+  }
+  undoHistory.splice(index,1);saveUndoHistory();save();renderAll();renderUndoHistory();toast("履歴から操作を戻しました");
+}
+function imageRows(){return tsums.filter(t=>t.image)}
+function openImageViewer(t){
+  const rows=imageRows();viewerIndex=Math.max(0,rows.findIndex(x=>x.id===t.id));
+  renderImageViewer();$("#imageViewerDialog").showModal();
+}
+function renderImageViewer(){
+  const rows=imageRows();if(!rows.length)return;
+  const t=rows[viewerIndex];
+  $("#viewerImage").src=t.image;$("#viewerName").textContent=t.name;
+  $("#prevImageButton").disabled=viewerIndex<=0;$("#nextImageButton").disabled=viewerIndex>=rows.length-1;
+}
+
 function ratingValue(t,type){
   if(type==="coin")return t.coinRating;
   if(type==="score")return t.scoreRating;
@@ -206,7 +276,24 @@ function ratingValue(t,type){
 }
 function renderStrategy(){
   $("#rankingOwnedOnlyButton").textContent=rankingOwnedOnly?"所持ツムのみ":"全ツム表示";
-  document.querySelectorAll("[data-ranking-type]").forEach(b=>b.classList.toggle("active",b.dataset.rankingType===rankingType));
+  
+$("#addTaskButton").onclick=()=>openTask();
+$("#cancelTaskButton").onclick=()=>$("#taskDialog").close();
+$("#taskForm").onsubmit=e=>{
+  e.preventDefault();
+  const id=$("#taskId").value||crypto.randomUUID();
+  const obj={id,title:$("#taskTitle").value.trim(),tsumName:$("#taskTsumName").value.trim(),target:Number($("#taskTarget").value)||0,done:dailyTasks.find(t=>t.id===id)?.done||false};
+  const i=dailyTasks.findIndex(t=>t.id===id);if(i>=0)dailyTasks[i]=obj;else dailyTasks.push(obj);
+  saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport();toast("タスクを保存しました");
+};
+$("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
+$("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
+$("#clearUndoHistoryButton").onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
+$("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
+$("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
+$("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
+
+document.querySelectorAll("[data-ranking-type]").forEach(b=>b.classList.toggle("active",b.dataset.rankingType===rankingType));
   let rows=tsums.filter(t=>(!rankingOwnedOnly||t.owned>0)&&ratingValue(t,rankingType)>0);
   rows.sort((a,b)=>ratingValue(b,rankingType)-ratingValue(a,rankingType)||a.name.localeCompare(b.name,"ja"));
   $("#personalRankingList").innerHTML=rows.slice(0,30).map((t,i)=>`<div class="personal-ranking-item">
@@ -238,6 +325,8 @@ function createSnapshot(){
   snapshots=snapshots.slice(-60);
   saveSnapshots();
   renderSnapshots();
+  renderDailyTasks();
+  renderMonthlyReport();
   toast("現在の進捗を記録しました");
 }
 function renderSnapshots(){
@@ -461,7 +550,7 @@ function renderBox(){
   renderHistory();
   if($("#ticketSearch").value)renderTicketCandidates();
 }
-function renderSettings(){$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体"}
+function renderSettings(){$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";renderUndoHistory()}
 function renderAll(){
   renderHome();
   if(activeView==="collection")renderCollection();
@@ -689,15 +778,15 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"4.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);if(Array.isArray(j.snapshots))snapshots=j.snapshots;save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+  r.onload=()=>{try{const j=JSON.parse(r.result),arr=Array.isArray(j)?j:j.tsums;if(!Array.isArray(arr))throw 0;tsums=mergeMaster(arr);if(Array.isArray(j.history))history=j.history;if(Array.isArray(j.recent))recent=j.recent;if(Array.isArray(j.plans))plans=j.plans;if(typeof j.todayTrainingId==="string")todayTrainingId=j.todayTrainingId;if(Array.isArray(j.goals))goals=j.goals;if(Number.isFinite(j.ticketStock))ticketStock=Math.max(0,j.ticketStock);if(Array.isArray(j.snapshots))snapshots=j.snapshots;if(Array.isArray(j.dailyTasks))dailyTasks=j.dailyTasks;if(Array.isArray(j.undoHistory))undoHistory=j.undoHistory;save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();renderAll();toast("バックアップを読み込みました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
-$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];snapshots=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveSnapshots();saveToday();saveUndo();renderAll();toast("初期化しました")}};
+$("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];plans=[];goals=[];snapshots=[];dailyTasks=[];undoHistory=[];ticketStock=0;todayTrainingId="";undoState=null;save();saveHistory();saveRecent();savePlans();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();saveToday();saveUndo();renderAll();toast("初期化しました")}};
 
 
 $("#applyQuickOwnedButton").onclick=()=>{
@@ -721,6 +810,23 @@ $("#applyQuickOwnedButton").onclick=()=>{
 
 
 
+
+
+$("#addTaskButton").onclick=()=>openTask();
+$("#cancelTaskButton").onclick=()=>$("#taskDialog").close();
+$("#taskForm").onsubmit=e=>{
+  e.preventDefault();
+  const id=$("#taskId").value||crypto.randomUUID();
+  const obj={id,title:$("#taskTitle").value.trim(),tsumName:$("#taskTsumName").value.trim(),target:Number($("#taskTarget").value)||0,done:dailyTasks.find(t=>t.id===id)?.done||false};
+  const i=dailyTasks.findIndex(t=>t.id===id);if(i>=0)dailyTasks[i]=obj;else dailyTasks.push(obj);
+  saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport();toast("タスクを保存しました");
+};
+$("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
+$("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
+$("#clearUndoHistoryButton").onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
+$("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
+$("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
+$("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
 
 document.querySelectorAll("[data-ranking-type]").forEach(b=>b.onclick=()=>{rankingType=b.dataset.rankingType;renderStrategy()});
 $("#rankingOwnedOnlyButton").onclick=()=>{rankingOwnedOnly=!rankingOwnedOnly;renderStrategy()};
