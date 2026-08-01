@@ -1,11 +1,10 @@
 {
-  "name": "TsumManager Ver.2",
+  "name": "TsumManager Ver.3",
   "short_name": "ツム管理",
-  "description": "ツムツムの所持数・スキルマ進捗管理",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f7fb",
+  "background_color": "#f5f6fb",
   "theme_color": "#6d28d9",
   "icons": [
     {
