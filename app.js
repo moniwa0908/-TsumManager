@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV633","tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV633", HISTORY_KEY="tsumManagerHistoryV633", RECENT_KEY="tsumManagerRecentV633", PLAN_KEY="tsumManagerPlansV633", TODAY_KEY="tsumManagerTodayV633", UNDO_KEY="tsumManagerUndoV633", GOAL_KEY="tsumManagerGoalsV633", TICKET_STOCK_KEY="tsumManagerTicketStockV633", SNAPSHOT_KEY="tsumManagerSnapshotsV633", TASK_KEY="tsumManagerTasksV633", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV633", BACKUP_META_KEY="tsumManagerBackupMetaV633";
+const KEYS=["tsumManagerDataV634","tsumManagerDataV633","tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV634", HISTORY_KEY="tsumManagerHistoryV634", RECENT_KEY="tsumManagerRecentV634", PLAN_KEY="tsumManagerPlansV634", TODAY_KEY="tsumManagerTodayV634", UNDO_KEY="tsumManagerUndoV634", GOAL_KEY="tsumManagerGoalsV634", TICKET_STOCK_KEY="tsumManagerTicketStockV634", SNAPSHOT_KEY="tsumManagerSnapshotsV634", TASK_KEY="tsumManagerTasksV634", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV634", BACKUP_META_KEY="tsumManagerBackupMetaV634";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -652,12 +652,12 @@ function compressImageFile(file){
       const img=new Image();
       img.onerror=()=>reject(new Error("画像を開けませんでした"));
       img.onload=()=>{
-        const size=360,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+        const size=240,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
         canvas.width=size;canvas.height=size;
         const scale=Math.max(size/img.width,size/img.height);
         const w=img.width*scale,h=img.height*scale;
         ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-        resolve(canvas.toDataURL("image/jpeg",0.82));
+        resolve(canvas.toDataURL("image/jpeg",0.72));
       };
       img.src=reader.result;
     };
@@ -845,6 +845,41 @@ $("#imagePreview").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefau
 ["dragleave","drop"].forEach(type=>$("#imagePreview").addEventListener(type,e=>{e.preventDefault();$("#imagePreview").classList.remove("dragover")}));
 $("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)applySelectedImage(f)});
 
+
+function isQuotaError(err){
+  return !!err && (
+    err.name==="QuotaExceededError" ||
+    err.name==="NS_ERROR_DOM_QUOTA_REACHED" ||
+    err.code===22 ||
+    err.code===1014
+  );
+}
+function localStorageUsageBytes(){
+  let chars=0;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||"";
+      chars+=key.length+(localStorage.getItem(key)||"").length;
+    }
+  }catch(e){}
+  return chars*2;
+}
+function safeSaveWithMessage(){
+  try{
+    save();
+    return {ok:true};
+  }catch(err){
+    if(isQuotaError(err)){
+      return {
+        ok:false,
+        quota:true,
+        message:"Safariの保存容量が不足しています。画像込みバックアップを保存した後、不要な画像を削除するか、画像を少しずつ登録してください。"
+      };
+    }
+    return {ok:false,quota:false,message:err?.message||String(err)};
+  }
+}
+
 function normalizeImageFileName(name){
   return name.replace(/\.[^.]+$/,"").trim()
     .normalize("NFKC")
@@ -900,16 +935,40 @@ function renderPendingBulkImages(){
 $("#bulkImageInput").onchange=async e=>{
   const files=[...e.target.files];
   if(!files.length)return;
-  let matched=0,failed=[];
+
+  const result=$("#bulkImageResult");
+  const pendingHolder=$("#bulkImagePending");
+  const applyButton=$("#applyBulkCandidatesButton");
+  let matched=0,failed=[],quotaStopped=false;
   pendingBulkImages=[];
-  for(const file of files){
-    const base=normalizeImageFileName(file.name);
-    const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
-    const exact=exactCandidates.length===1?exactCandidates[0]:null;
+
+  result.innerHTML=`画像を準備しています… 0/${files.length}件`;
+  pendingHolder.innerHTML="";
+  applyButton.hidden=true;
+
+  await new Promise(resolve=>setTimeout(resolve,40));
+
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    result.innerHTML=`画像を処理しています… ${i+1}/${files.length}件<br>登録済み：${matched}件<br>候補選択待ち：${pendingBulkImages.length}件`;
+
     try{
+      const base=normalizeImageFileName(file.name);
+      const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
+      const exact=exactCandidates.length===1?exactCandidates[0]:null;
       const image=await compressImageFile(file);
+
       if(exact){
+        const before=exact.image;
         exact.image=image;
+
+        const saved=safeSaveWithMessage();
+        if(!saved.ok){
+          exact.image=before;
+          quotaStopped=true;
+          result.innerHTML=`<span class="bulk-result-warn">保存容量不足のため途中で停止しました。</span><br>登録成功：${matched}件<br>未処理：${files.length-i}件<br><br>${esc(saved.message)}<br><br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
+          break;
+        }
         matched++;
       }else{
         pendingBulkImages.push({
@@ -919,12 +978,20 @@ $("#bulkImageInput").onchange=async e=>{
         });
       }
     }catch(err){
-      failed.push(file.name);
+      failed.push(`${file.name}：${err?.message||String(err)}`);
     }
+
+    await new Promise(resolve=>setTimeout(resolve,0));
   }
-  save();renderAll();renderPendingBulkImages();
-  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件${failed.length?`<br><br>読込失敗：<br>${failed.map(esc).join("<br>")}`:""}`;
-  if(matched)toast(`${matched}体の画像を自動登録しました`);
+
+  renderAll();
+  renderPendingBulkImages();
+
+  if(!quotaStopped){
+    result.innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}${failed.length?`<br><br>失敗：<br>${failed.slice(0,20).map(esc).join("<br>")}`:""}`;
+    toast(`${matched}体の画像を登録しました`);
+  }
+
   e.target.value="";
 };
 
@@ -1006,26 +1073,40 @@ $("#closeMissingDataButton").onclick=()=>{$("#missingDataDialog").close();render
 
 
 $("#applyBulkCandidatesButton").onclick=()=>{
-  let applied=0,skipped=0,duplicates=[];
-  $("#bulkImagePending").querySelectorAll("[data-pending-select]").forEach(select=>{
+  let applied=0,skipped=0,duplicates=[],quotaStopped=false;
+  const selections=[...$("#bulkImagePending").querySelectorAll("[data-pending-select]")];
+
+  for(const select of selections){
     const index=Number(select.dataset.pendingSelect);
     const item=pendingBulkImages[index];
     const id=select.value;
-    if(!item||!id){skipped++;return}
+    if(!item||!id){skipped++;continue}
+
     const t=tsums.find(x=>x.id===id);
-    if(!t){skipped++;return}
-    if(t.image){
-      duplicates.push(t.name);
-      return;
-    }
+    if(!t){skipped++;continue}
+    if(t.image){duplicates.push(t.name);continue}
+
+    const before=t.image;
     t.image=item.image;
+    const saved=safeSaveWithMessage();
+
+    if(!saved.ok){
+      t.image=before;
+      quotaStopped=true;
+      $("#bulkImageResult").innerHTML=`<span class="bulk-result-warn">保存容量不足のため途中で停止しました。</span><br>候補から登録：${applied}件<br><br>${esc(saved.message)}<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
+      break;
+    }
     applied++;
-  });
-  save();renderAll();
-  pendingBulkImages=[];
-  renderPendingBulkImages();
-  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">候補から登録：${applied}件</span><br>登録しなかった画像：${skipped}件${duplicates.length?`<br><span class="bulk-result-warn">既に画像あり：${duplicates.map(esc).join("、")}</span>`:""}`;
-  toast(`${applied}体へ画像を登録しました`);
+  }
+
+  renderAll();
+
+  if(!quotaStopped){
+    pendingBulkImages=[];
+    renderPendingBulkImages();
+    $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">候補から登録：${applied}件</span><br>登録しなかった画像：${skipped}件${duplicates.length?`<br><span class="bulk-result-warn">既に画像あり：${duplicates.map(esc).join("、")}</span>`:""}<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
+    toast(`${applied}体へ画像を登録しました`);
+  }
 };
 
 $("#removeImageButton").onclick=()=>{
@@ -1052,7 +1133,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.4",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1177,7 +1258,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3.3",
+    version:"6.3.4",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1284,7 +1365,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"6.3.3",
+      version:"6.3.4",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));

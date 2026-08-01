@@ -501,3 +501,8 @@ dialog{
   opacity:.55;
   pointer-events:none;
 }
+
+#bulkImageResult{
+  min-height:72px;
+  line-height:1.65;
+}

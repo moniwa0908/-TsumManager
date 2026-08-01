@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.3.3",
+  "name": "TsumManager 6.3.4",
   "short_name": "ツム管理",
-  "description": "ピグレットのスキルマ必要数を7体へ修正したデータ更新版",
+  "description": "画像一括登録の進捗表示とSafari保存容量エラー表示を追加した修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
