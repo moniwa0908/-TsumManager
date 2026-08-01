@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 7.0 Rescue",
+  "name": "TsumManager 7.1.1 Premium",
   "short_name": "ツム管理",
-  "description": "実際のゲーム画面と同じスキルレベル・ゲージ率入力に対応したデータ復旧対応版",
+  "description": "アースラからダグまでのプレミアムツム150体のスキル成長データを反映した復旧対応版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
