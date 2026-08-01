@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV634","tsumManagerDataV633","tsumManagerDataV632","tsumManagerDataV631","tsumManagerDataV63","tsumManagerDataV62","tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV634", HISTORY_KEY="tsumManagerHistoryV634", RECENT_KEY="tsumManagerRecentV634", PLAN_KEY="tsumManagerPlansV634", TODAY_KEY="tsumManagerTodayV634", UNDO_KEY="tsumManagerUndoV634", GOAL_KEY="tsumManagerGoalsV634", TICKET_STOCK_KEY="tsumManagerTicketStockV634", SNAPSHOT_KEY="tsumManagerSnapshotsV634", TASK_KEY="tsumManagerTasksV634", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV634", BACKUP_META_KEY="tsumManagerBackupMetaV634";
+const KEYS=["tsumManagerDataV634", "tsumManagerDataV633", "tsumManagerDataV632", "tsumManagerDataV631", "tsumManagerDataV63", "tsumManagerDataV62", "tsumManagerDataV611", "tsumManagerDataV61", "tsumManagerDataV602", "tsumManagerDataV601", "tsumManagerDataV60", "tsumManagerDataV53", "tsumManagerDataV521", "tsumManagerDataV52", "tsumManagerDataV51", "tsumManagerDataV50", "tsumManagerDataV40", "tsumManagerDataV30", "tsumManagerDataV20", "tsumManagerDataV12", "tsumManagerDataV11", "tsumManagerDataV10", "tsumManagerDataV9", "tsumManagerDataV8", "tsumManagerDataV7", "tsumManagerDataV6", "tsumManagerDataV5", "tsumManagerDataV4", "tsumManagerDataV3", "tsumManagerDataV2", "tsumManagerDataV1"];
+const KEY="tsumManagerDataV633", HISTORY_KEY="tsumManagerHistoryV633", RECENT_KEY="tsumManagerRecentV633", PLAN_KEY="tsumManagerPlansV633", TODAY_KEY="tsumManagerTodayV633", UNDO_KEY="tsumManagerUndoV633", GOAL_KEY="tsumManagerGoalsV633", TICKET_STOCK_KEY="tsumManagerTicketStockV633", SNAPSHOT_KEY="tsumManagerSnapshotsV633", TASK_KEY="tsumManagerTasksV633", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV633", BACKUP_META_KEY="tsumManagerBackupMetaV633";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -55,14 +55,37 @@ function mergeMaster(existing){
   for(const old of oldMap.values())merged.push(old);
   return merged;
 }
+function dataRecoveryScore(rows){
+  if(!Array.isArray(rows)||!rows.length)return -1;
+  let images=0,owned=0,favorites=0,memos=0,tags=0;
+  for(const t of rows){
+    if(t&&t.image)images++;
+    owned+=Math.max(0,Number(t?.owned||0));
+    if(t?.favorite)favorites++;
+    if(t?.memo||t?.note)memos++;
+    if(Array.isArray(t?.tags))tags+=t.tags.length;
+  }
+  // 画像を最重要、次に所持数、その後の個人入力を評価する。
+  return images*1000000+owned*1000+favorites*100+memos*10+tags+rows.length;
+}
+let recoveredStorageKey="";
 function loadData(){
+  let best=null,bestScore=-1,bestKey="";
   for(const key of KEYS){
     try{
-      const data=JSON.parse(localStorage.getItem(key)||"null");
-      if(Array.isArray(data)&&data.length)return mergeMaster(data);
+      const raw=localStorage.getItem(key);
+      if(!raw)continue;
+      const data=JSON.parse(raw);
+      const score=dataRecoveryScore(data);
+      if(score>bestScore){
+        best=data;
+        bestScore=score;
+        bestKey=key;
+      }
     }catch(e){}
   }
-  return master();
+  recoveredStorageKey=bestKey;
+  return best?mergeMaster(best):master();
 }
 let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
@@ -78,7 +101,24 @@ let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
-function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
+function save(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify(tsums));
+    return true;
+  }catch(err){
+    console.error("保存に失敗しました",err);
+    const message=err?.name==="QuotaExceededError"
+      ?"Safariの保存容量が不足しています。新しい画像登録を中止し、現在のデータを保持しました。"
+      :"データを保存できませんでした："+(err?.message||String(err));
+    const toastEl=document.querySelector("#toast");
+    if(toastEl){
+      toastEl.textContent=message;
+      toastEl.classList.add("show");
+      setTimeout(()=>toastEl.classList.remove("show"),5000);
+    }
+    return false;
+  }
+}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
 function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
 function savePlans(){localStorage.setItem(PLAN_KEY,JSON.stringify(plans))}
@@ -107,7 +147,6 @@ function touchRecent(id){
   recent=[id,...recent.filter(x=>x!==id)].slice(0,20);
   saveRecent();
 }
-save();
 const remain=t=>Math.max(0,t.required-t.owned);
 const pct=t=>Math.min(100,Math.round(t.owned/t.required*100));
 function skillText(t){
@@ -606,6 +645,7 @@ function renderBox(){
   if($("#ticketSearch").value)renderTicketCandidates();
 }
 function renderSettings(){
+  setTimeout(renderRescueStatus,0);
   $("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
   const dated=tsums.filter(t=>t.releaseDate).length;
   const seriesCount=tsums.filter(t=>t.series).length;
@@ -652,12 +692,12 @@ function compressImageFile(file){
       const img=new Image();
       img.onerror=()=>reject(new Error("画像を開けませんでした"));
       img.onload=()=>{
-        const size=240,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+        const size=360,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
         canvas.width=size;canvas.height=size;
         const scale=Math.max(size/img.width,size/img.height);
         const w=img.width*scale,h=img.height*scale;
         ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-        resolve(canvas.toDataURL("image/jpeg",0.72));
+        resolve(canvas.toDataURL("image/jpeg",0.82));
       };
       img.src=reader.result;
     };
@@ -845,41 +885,6 @@ $("#imagePreview").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefau
 ["dragleave","drop"].forEach(type=>$("#imagePreview").addEventListener(type,e=>{e.preventDefault();$("#imagePreview").classList.remove("dragover")}));
 $("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)applySelectedImage(f)});
 
-
-function isQuotaError(err){
-  return !!err && (
-    err.name==="QuotaExceededError" ||
-    err.name==="NS_ERROR_DOM_QUOTA_REACHED" ||
-    err.code===22 ||
-    err.code===1014
-  );
-}
-function localStorageUsageBytes(){
-  let chars=0;
-  try{
-    for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i)||"";
-      chars+=key.length+(localStorage.getItem(key)||"").length;
-    }
-  }catch(e){}
-  return chars*2;
-}
-function safeSaveWithMessage(){
-  try{
-    save();
-    return {ok:true};
-  }catch(err){
-    if(isQuotaError(err)){
-      return {
-        ok:false,
-        quota:true,
-        message:"Safariの保存容量が不足しています。画像込みバックアップを保存した後、不要な画像を削除するか、画像を少しずつ登録してください。"
-      };
-    }
-    return {ok:false,quota:false,message:err?.message||String(err)};
-  }
-}
-
 function normalizeImageFileName(name){
   return name.replace(/\.[^.]+$/,"").trim()
     .normalize("NFKC")
@@ -935,40 +940,16 @@ function renderPendingBulkImages(){
 $("#bulkImageInput").onchange=async e=>{
   const files=[...e.target.files];
   if(!files.length)return;
-
-  const result=$("#bulkImageResult");
-  const pendingHolder=$("#bulkImagePending");
-  const applyButton=$("#applyBulkCandidatesButton");
-  let matched=0,failed=[],quotaStopped=false;
+  let matched=0,failed=[];
   pendingBulkImages=[];
-
-  result.innerHTML=`画像を準備しています… 0/${files.length}件`;
-  pendingHolder.innerHTML="";
-  applyButton.hidden=true;
-
-  await new Promise(resolve=>setTimeout(resolve,40));
-
-  for(let i=0;i<files.length;i++){
-    const file=files[i];
-    result.innerHTML=`画像を処理しています… ${i+1}/${files.length}件<br>登録済み：${matched}件<br>候補選択待ち：${pendingBulkImages.length}件`;
-
+  for(const file of files){
+    const base=normalizeImageFileName(file.name);
+    const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
+    const exact=exactCandidates.length===1?exactCandidates[0]:null;
     try{
-      const base=normalizeImageFileName(file.name);
-      const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
-      const exact=exactCandidates.length===1?exactCandidates[0]:null;
       const image=await compressImageFile(file);
-
       if(exact){
-        const before=exact.image;
         exact.image=image;
-
-        const saved=safeSaveWithMessage();
-        if(!saved.ok){
-          exact.image=before;
-          quotaStopped=true;
-          result.innerHTML=`<span class="bulk-result-warn">保存容量不足のため途中で停止しました。</span><br>登録成功：${matched}件<br>未処理：${files.length-i}件<br><br>${esc(saved.message)}<br><br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
-          break;
-        }
         matched++;
       }else{
         pendingBulkImages.push({
@@ -978,20 +959,12 @@ $("#bulkImageInput").onchange=async e=>{
         });
       }
     }catch(err){
-      failed.push(`${file.name}：${err?.message||String(err)}`);
+      failed.push(file.name);
     }
-
-    await new Promise(resolve=>setTimeout(resolve,0));
   }
-
-  renderAll();
-  renderPendingBulkImages();
-
-  if(!quotaStopped){
-    result.innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}${failed.length?`<br><br>失敗：<br>${failed.slice(0,20).map(esc).join("<br>")}`:""}`;
-    toast(`${matched}体の画像を登録しました`);
-  }
-
+  save();renderAll();renderPendingBulkImages();
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件${failed.length?`<br><br>読込失敗：<br>${failed.map(esc).join("<br>")}`:""}`;
+  if(matched)toast(`${matched}体の画像を自動登録しました`);
   e.target.value="";
 };
 
@@ -1073,40 +1046,26 @@ $("#closeMissingDataButton").onclick=()=>{$("#missingDataDialog").close();render
 
 
 $("#applyBulkCandidatesButton").onclick=()=>{
-  let applied=0,skipped=0,duplicates=[],quotaStopped=false;
-  const selections=[...$("#bulkImagePending").querySelectorAll("[data-pending-select]")];
-
-  for(const select of selections){
+  let applied=0,skipped=0,duplicates=[];
+  $("#bulkImagePending").querySelectorAll("[data-pending-select]").forEach(select=>{
     const index=Number(select.dataset.pendingSelect);
     const item=pendingBulkImages[index];
     const id=select.value;
-    if(!item||!id){skipped++;continue}
-
+    if(!item||!id){skipped++;return}
     const t=tsums.find(x=>x.id===id);
-    if(!t){skipped++;continue}
-    if(t.image){duplicates.push(t.name);continue}
-
-    const before=t.image;
-    t.image=item.image;
-    const saved=safeSaveWithMessage();
-
-    if(!saved.ok){
-      t.image=before;
-      quotaStopped=true;
-      $("#bulkImageResult").innerHTML=`<span class="bulk-result-warn">保存容量不足のため途中で停止しました。</span><br>候補から登録：${applied}件<br><br>${esc(saved.message)}<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
-      break;
+    if(!t){skipped++;return}
+    if(t.image){
+      duplicates.push(t.name);
+      return;
     }
+    t.image=item.image;
     applied++;
-  }
-
-  renderAll();
-
-  if(!quotaStopped){
-    pendingBulkImages=[];
-    renderPendingBulkImages();
-    $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">候補から登録：${applied}件</span><br>登録しなかった画像：${skipped}件${duplicates.length?`<br><span class="bulk-result-warn">既に画像あり：${duplicates.map(esc).join("、")}</span>`:""}<br>現在の推定使用量：約${formatBytes(localStorageUsageBytes())}`;
-    toast(`${applied}体へ画像を登録しました`);
-  }
+  });
+  save();renderAll();
+  pendingBulkImages=[];
+  renderPendingBulkImages();
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">候補から登録：${applied}件</span><br>登録しなかった画像：${skipped}件${duplicates.length?`<br><span class="bulk-result-warn">既に画像あり：${duplicates.map(esc).join("、")}</span>`:""}`;
+  toast(`${applied}体へ画像を登録しました`);
 };
 
 $("#removeImageButton").onclick=()=>{
@@ -1133,7 +1092,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.4",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.3.5 Rescue",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -1258,7 +1217,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"6.3.4",
+    version:"6.3.5 Rescue",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1365,7 +1324,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"6.3.4",
+      version:"6.3.5 Rescue",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1588,3 +1547,35 @@ $("#compactToggle").checked=compact;$("#compactToggle").onchange=e=>{compact=e.t
 $("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 renderAll();showView("home");
+
+
+function renderRescueStatus(){
+  const el=$("#rescueStatus");
+  if(!el)return;
+  const imageCount=tsums.filter(t=>t.image).length;
+  const ownedTotal=tsums.reduce((sum,t)=>sum+Number(t.owned||0),0);
+  el.innerHTML=`読込元：${esc(recoveredStorageKey||"保存データなし")}<br>画像登録：${imageCount}体<br>所持数合計：${ownedTotal}<br>収録ツム：${tsums.length}体`;
+}
+const rescueBackupButton=$("#rescueBackupButton");
+if(rescueBackupButton){
+  rescueBackupButton.onclick=async()=>{
+    if(typeof exportFullBackup==="function"){
+      await exportFullBackup("TsumManager_Rescued",true);
+    }else{
+      const backup={
+        app:"TsumManager",
+        version:"6.3.5 Rescue",
+        exportedAt:new Date().toISOString(),
+        recoveredStorageKey,
+        tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
+      };
+      const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=`TsumManager_Rescued_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    }
+  };
+}
+

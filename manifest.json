@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.3.4",
+  "name": "TsumManager 6.3.5 Rescue",
   "short_name": "ツム管理",
-  "description": "画像一括登録の進捗表示とSafari保存容量エラー表示を追加した修正版",
+  "description": "過去の保存領域から画像・所持数などが最も多いデータを自動復旧する緊急修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

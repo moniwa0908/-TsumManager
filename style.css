@@ -502,7 +502,7 @@ dialog{
   pointer-events:none;
 }
 
-#bulkImageResult{
-  min-height:72px;
-  line-height:1.65;
+.rescue-panel{
+  border:2px solid #f59e0b;
+  background:linear-gradient(180deg,#fffbeb,var(--card));
 }

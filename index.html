@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 6.3.4</title>
+  <title>TsumManager 6.3.5 Rescue</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 6.3.4</p>
+      <p>TsumManager 6.3.5 Rescue</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -378,6 +378,14 @@
       </article>
 
 
+
+      <article class="panel settings-panel rescue-panel">
+        <h2>データ復旧モード</h2>
+        <p class="helper">過去の保存領域を比較し、画像・所持数などの入力が最も多いデータを自動で読み込みます。Safariの履歴やWebサイトデータは消去しないでください。</p>
+        <div id="rescueStatus" class="result-box">復旧データを確認しています。</div>
+        <button type="button" id="rescueBackupButton" class="primary-button">復旧したデータをバックアップ</button>
+      </article>
+
       <article class="panel settings-panel backup-panel">
         <h2>完全バックアップ</h2>
         <p class="helper">所持数・画像・お気に入り・メモ・タグ・評価・目標・履歴などを、1つのJSONファイルに保存します。</p>
@@ -427,7 +435,7 @@
         <h2>画像の一括登録</h2>
         <p class="helper">画像ファイル名をツム名と同じにしてください。拡張子はjpg・png・webpなどに対応します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
         <label class="switch-row"><span>似た名前を候補として表示</span><input id="fuzzyImageMatchToggle" type="checkbox"></label>
-        <p class="helper">完全一致した画像は自動登録します。一致しない場合は候補を表示します。処理中は進捗を表示し、Safariの保存容量が不足した場合は理由を表示して安全に停止します。</p>
+        <p class="helper">完全一致した画像は自動登録します。一致しない場合は、画像未登録ツムから近い名前の候補を表示し、選択して登録できます。</p>
         <label class="file-button">複数画像を選択
           <input id="bulkImageInput" type="file" accept="image/*" multiple>
         </label>
