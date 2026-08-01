@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 6.0.1</title>
+  <title>TsumManager 6.0.2</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 6.0.1</p>
+      <p>TsumManager 6.0.2</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -410,11 +410,13 @@
         <h2>画像の一括登録</h2>
         <p class="helper">画像ファイル名をツム名と同じにしてください。拡張子はjpg・png・webpなどに対応します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
         <label class="switch-row"><span>似た名前を候補として表示</span><input id="fuzzyImageMatchToggle" type="checkbox"></label>
-        <p class="helper">似た名前は自動登録しません。完全一致した画像だけ登録します。</p>
+        <p class="helper">完全一致した画像は自動登録します。一致しない場合は、画像未登録ツムから近い名前の候補を表示し、選択して登録できます。</p>
         <label class="file-button">複数画像を選択
           <input id="bulkImageInput" type="file" accept="image/*" multiple>
         </label>
         <div id="bulkImageResult" class="result-box">まだ画像は選択されていません。</div>
+        <div id="bulkImagePending" class="bulk-pending-list"></div>
+        <button id="applyBulkCandidatesButton" class="primary-button" hidden>選択した候補へ反映</button>
       </article>
 
       <article class="panel settings-panel">

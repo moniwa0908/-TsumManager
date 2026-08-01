@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV601", HISTORY_KEY="tsumManagerHistoryV601", RECENT_KEY="tsumManagerRecentV601", PLAN_KEY="tsumManagerPlansV601", TODAY_KEY="tsumManagerTodayV601", UNDO_KEY="tsumManagerUndoV601", GOAL_KEY="tsumManagerGoalsV601", TICKET_STOCK_KEY="tsumManagerTicketStockV601", SNAPSHOT_KEY="tsumManagerSnapshotsV601", TASK_KEY="tsumManagerTasksV601", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV601";
+const KEYS=["tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV602", HISTORY_KEY="tsumManagerHistoryV602", RECENT_KEY="tsumManagerRecentV602", PLAN_KEY="tsumManagerPlansV602", TODAY_KEY="tsumManagerTodayV602", UNDO_KEY="tsumManagerUndoV602", GOAL_KEY="tsumManagerGoalsV602", TICKET_STOCK_KEY="tsumManagerTicketStockV602", SNAPSHOT_KEY="tsumManagerSnapshotsV602", TASK_KEY="tsumManagerTasksV602", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV602";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -54,7 +54,7 @@ let ticketStock=Math.max(0,Number(localStorage.getItem(TICKET_STOCK_KEY)||0));
 let snapshots=(()=>{try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"[]")}catch(e){return[]}})();
 let dailyTasks=(()=>{try{return JSON.parse(localStorage.getItem(TASK_KEY)||"[]")}catch(e){return[]}})();
 let undoHistory=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_HISTORY_KEY)||"[]")}catch(e){return[]}})();
-let viewerIndex=0;
+let viewerIndex=0,pendingBulkImages=[];
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
@@ -825,47 +825,84 @@ $("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];i
 
 function normalizeImageFileName(name){
   return name.replace(/\.[^.]+$/,"").trim()
-    .replace(/[_-]+/g," ")
-    .replace(/\s+/g," ")
+    .normalize("NFKC")
+    .replace(/[・･_\-‐‑‒–—―()（）\[\]【】「」『』'’"“”]/g,"")
+    .replace(/\s+/g,"")
     .toLowerCase();
+}
+function levenshteinDistance(a,b){
+  const dp=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++)dp[i][0]=i;
+  for(let j=0;j<=b.length;j++)dp[0][j]=j;
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
+    }
+  }
+  return dp[a.length][b.length];
+}
+function candidateScore(fileBase,tsumName){
+  const name=normalizeImageFileName(tsumName);
+  if(name===fileBase)return 1000;
+  const maxLen=Math.max(fileBase.length,name.length,1);
+  let score=100-(levenshteinDistance(fileBase,name)/maxLen*100);
+  if(name.includes(fileBase)||fileBase.includes(name))score+=20;
+  return score;
+}
+function getBulkCandidates(fileBase){
+  return tsums
+    .filter(t=>!t.image)
+    .map(t=>({t,score:candidateScore(fileBase,t.name)}))
+    .sort((a,b)=>b.score-a.score||a.t.name.localeCompare(b.t.name,"ja"))
+    .slice(0,8);
+}
+function renderPendingBulkImages(){
+  const holder=$("#bulkImagePending"),button=$("#applyBulkCandidatesButton");
+  holder.innerHTML=pendingBulkImages.map((item,index)=>{
+    const options=item.candidates.map((c,i)=>`<option value="${c.t.id}" ${i===0?"selected":""}>${esc(c.t.name)}（近さ ${Math.max(0,Math.round(c.score))}%）</option>`).join("");
+    return `<div class="bulk-pending-item">
+      <img src="${item.image}" alt="">
+      <div>
+        <strong>${esc(item.fileName)}</strong>
+        <select data-pending-select="${index}">
+          <option value="">登録しない</option>
+          ${options}
+        </select>
+        <div class="bulk-pending-note">画像未登録のツムから近い名前順に表示しています。</div>
+      </div>
+    </div>`;
+  }).join("");
+  button.hidden=pendingBulkImages.length===0;
 }
 $("#bulkImageInput").onchange=async e=>{
   const files=[...e.target.files];
   if(!files.length)return;
-  let matched=0,unmatched=[],failed=[];
+  let matched=0,failed=[];
+  pendingBulkImages=[];
   for(const file of files){
     const base=normalizeImageFileName(file.name);
-    const compactBase=base.replace(/\s/g,"");
-    const exactCandidates=tsums.filter(x=>{
-      const name=normalizeImageFileName(x.name);
-      const compactName=name.replace(/\s/g,"");
-      return name===base||compactName===compactBase;
-    });
-    let t=exactCandidates.length===1?exactCandidates[0]:null;
-
-    if(!t){
-      let suggestion="";
-      if($("#fuzzyImageMatchToggle").checked){
-        const fuzzyCandidates=tsums.filter(x=>{
-          const compactName=normalizeImageFileName(x.name).replace(/\s/g,"");
-          return compactBase.length>=3&&compactName.length>=3&&
-            (compactName.includes(compactBase)||compactBase.includes(compactName));
-        }).slice(0,5);
-        if(fuzzyCandidates.length){
-          suggestion=` → 候補: ${fuzzyCandidates.map(x=>x.name).join(" / ")}`;
-        }
-      }
-      unmatched.push(file.name+suggestion);
-      continue;
-    }
+    const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
+    const exact=exactCandidates.length===1?exactCandidates[0]:null;
     try{
-      t.image=await compressImageFile(file);
-      matched++;
-    }catch(err){failed.push(file.name)}
+      const image=await compressImageFile(file);
+      if(exact){
+        exact.image=image;
+        matched++;
+      }else{
+        pendingBulkImages.push({
+          fileName:file.name,
+          image,
+          candidates:getBulkCandidates(base)
+        });
+      }
+    }catch(err){
+      failed.push(file.name);
+    }
   }
-  save();renderAll();
-  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">登録成功：${matched}件</span><br><span class="bulk-result-warn">未登録（完全一致なし）：${unmatched.length}件</span><br>読込失敗：${failed.length}件${unmatched.length?`<br><br>未登録ファイル：<br>${unmatched.slice(0,30).map(esc).join("<br>")}${unmatched.length>30?"<br>ほか":""}`:""}`;
-  toast(`${matched}体の画像を登録しました`);
+  save();renderAll();renderPendingBulkImages();
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件${failed.length?`<br><br>読込失敗：<br>${failed.map(esc).join("<br>")}`:""}`;
+  if(matched)toast(`${matched}体の画像を自動登録しました`);
   e.target.value="";
 };
 
@@ -945,6 +982,30 @@ $("#showMissingSeriesButton").onclick=()=>openMissingData("series");
 $("#missingDataSearch").oninput=renderMissingData;
 $("#closeMissingDataButton").onclick=()=>{$("#missingDataDialog").close();renderAll()};
 
+
+$("#applyBulkCandidatesButton").onclick=()=>{
+  let applied=0,skipped=0,duplicates=[];
+  $("#bulkImagePending").querySelectorAll("[data-pending-select]").forEach(select=>{
+    const index=Number(select.dataset.pendingSelect);
+    const item=pendingBulkImages[index];
+    const id=select.value;
+    if(!item||!id){skipped++;return}
+    const t=tsums.find(x=>x.id===id);
+    if(!t){skipped++;return}
+    if(t.image){
+      duplicates.push(t.name);
+      return;
+    }
+    t.image=item.image;
+    applied++;
+  });
+  save();renderAll();
+  pendingBulkImages=[];
+  renderPendingBulkImages();
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">候補から登録：${applied}件</span><br>登録しなかった画像：${skipped}件${duplicates.length?`<br><span class="bulk-result-warn">既に画像あり：${duplicates.map(esc).join("、")}</span>`:""}`;
+  toast(`${applied}体へ画像を登録しました`);
+};
+
 $("#removeImageButton").onclick=()=>{
   if(!editingImage){toast("画像は登録されていません");return}
   editingImage="";
@@ -969,7 +1030,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0.2",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

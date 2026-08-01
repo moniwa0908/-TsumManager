@@ -315,3 +315,10 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg
 }
 
 .bulk-safety-note{padding:9px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px}
+
+.bulk-pending-list{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.bulk-pending-item{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.bulk-pending-item img{width:56px;height:56px;object-fit:cover;border-radius:12px}
+.bulk-pending-item strong{display:block;margin-bottom:5px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bulk-pending-item select{min-height:40px;padding:8px}
+.bulk-pending-note{color:var(--muted);font-size:11px;margin-top:4px}
