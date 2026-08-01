@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager Ver.6</title>
+  <title>TsumManager Ver.7</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager Ver.6</p>
+      <p>TsumManager Ver.7</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -169,6 +169,12 @@
         <button id="openImageManagerButton">登録画像を管理</button>
       </article>
 
+
+      <article class="panel">
+        <div class="section-title"><h2>データ診断</h2><button id="runHealthCheckButton">診断する</button></div>
+        <div id="healthResult" class="health-result">未診断です。</div>
+      </article>
+
       <article class="panel">
         <h2>アプリ情報</h2>
         <dl class="info-list">
@@ -214,6 +220,7 @@
     <div id="imagePreview" class="image-preview"></div>
     <button type="button" id="removeImageButton" class="secondary-button">画像を削除</button>
     <label>メモ<textarea id="editMemo"></textarea></label>
+    <button type="button" id="openDetailFromEditButton" class="secondary-button">詳細画面を開く</button>
     <div class="dialog-actions">
       <button type="button" id="deleteButton" class="danger-button">削除</button>
       <button type="button" id="cancelEditButton" class="secondary-button">キャンセル</button>
@@ -222,6 +229,42 @@
   </form>
 </dialog>
 
+
+
+<dialog id="detailDialog">
+  <div class="detail-dialog">
+    <div class="detail-hero">
+      <div id="detailAvatar" class="detail-avatar"></div>
+      <div>
+        <span id="detailCategory" class="detail-category"></span>
+        <h2 id="detailName"></h2>
+        <p id="detailSkill"></p>
+      </div>
+    </div>
+    <div class="detail-progress-wrap">
+      <div class="detail-progress-head"><span>育成進捗</span><b id="detailPercent">0%</b></div>
+      <div class="detail-progress"><i id="detailBar"></i></div>
+    </div>
+    <div class="detail-grid">
+      <div><span>現在数</span><b id="detailOwned">0</b></div>
+      <div><span>必要数</span><b id="detailRequired">0</b></div>
+      <div><span>残り</span><b id="detailRemaining">0</b></div>
+      <div><span>必要コイン</span><b id="detailCoins">0</b></div>
+    </div>
+    <div class="detail-direct">
+      <label>所持数を直接入力
+        <input id="detailOwnedInput" type="number" min="0" max="999">
+      </label>
+      <button id="saveDetailOwnedButton" class="primary-button">反映</button>
+    </div>
+    <div id="detailMemo" class="detail-memo"></div>
+    <div class="dialog-actions">
+      <button id="detailFavoriteButton" class="secondary-button">お気に入り</button>
+      <button id="detailEditButton" class="secondary-button">編集</button>
+      <button id="closeDetailButton" class="primary-button">閉じる</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="imageManagerDialog">
   <div class="image-manager-dialog">

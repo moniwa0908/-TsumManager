@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV6", HISTORY_KEY="tsumManagerHistoryV6", RECENT_KEY="tsumManagerRecentV6";
+const KEYS=["tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV7", HISTORY_KEY="tsumManagerHistoryV7", RECENT_KEY="tsumManagerRecentV7";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
@@ -28,7 +28,7 @@ let tsums=loadData();
 let history=(()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch(e){return[]}})();
 let recent=(()=>{try{return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]")}catch(e){return[]}})();
 let activeView="home",category="すべて",status="all",increment=1;
-let compact=localStorage.getItem("tm-compact")==="1",editingImage="",ticketSelection="";
+let compact=localStorage.getItem("tm-compact")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
 function saveRecent(){localStorage.setItem(RECENT_KEY,JSON.stringify(recent.slice(0,20)))}
@@ -71,12 +71,12 @@ function showView(view){
 function avatarHtml(t){return t.image?`<img src="${esc(t.image)}" alt="">`:esc(t.name.slice(0,1))}
 function cardHtml(t){
   const tag=priorityText(t.priority);
-  return `<article class="tsum-card">
-    <div class="avatar">${avatarHtml(t)}</div>
+  return `<article class="tsum-card ${remain(t)>0&&remain(t)<=5?"near-max":""}">
+    <button class="avatar" data-action="detail" data-id="${t.id}">${avatarHtml(t)}</button>
     <div>
       <div class="title-row">
         <button class="star ${t.favorite?"on":""}" data-action="favorite" data-id="${t.id}">★</button>
-        <strong>${esc(t.name)}</strong>
+        <strong role="button" data-action="detail" data-id="${t.id}">${esc(t.name)}</strong>
         ${tag?`<span class="priority-tag">${tag}</span>`:""}
         <button class="more" data-action="edit" data-id="${t.id}">•••</button>
       </div>
@@ -98,6 +98,7 @@ function handleCardAction(action,id){
   if(action==="plus")t.owned=Math.min(t.required,t.owned+increment);
   if(action==="minus")t.owned=Math.max(0,t.owned-increment);
   if(action==="favorite")t.favorite=!t.favorite;
+  if(action==="detail"){touchRecent(t.id);openDetail(t);return}
   if(action==="edit"){touchRecent(t.id);openEdit(t);return}
   touchRecent(t.id);
   save();renderAll();
@@ -136,11 +137,11 @@ function renderList(){
   const cats=["すべて",...new Set(tsums.map(t=>t.category))];
   $("#categoryChips").innerHTML=cats.map(c=>`<button data-category="${esc(c)}" class="${c===category?"active":""}">${esc(c)}</button>`).join("");
   $("#categoryChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{category=b.dataset.category;renderList()});
-  const statuses=[["all","すべて"],["unowned","未所持"],["owned","所持済み"],["max","スキルマ"],["near","目前"],["favorite","★お気に入り"],["priority","育成予定"]];
+  const statuses=[["all","すべて"],["unowned","未所持"],["owned","所持済み"],["max","スキルマ"],["near","目前"],["favorite","★お気に入り"],["priority","育成予定"],["noimage","画像なし"]];
   $("#statusChips").innerHTML=statuses.map(([k,v])=>`<button data-status="${k}" class="${k===status?"active":""}">${v}</button>`).join("");
   $("#statusChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{status=b.dataset.status;renderList()});
   let rows=tsums.filter(t=>{
-    const matchStatus=status==="all"||(status==="unowned"&&t.owned===0)||(status==="owned"&&t.owned>0&&remain(t)>0)||(status==="max"&&remain(t)===0)||(status==="near"&&remain(t)>0&&remain(t)<=5)||(status==="favorite"&&t.favorite)||(status==="priority"&&t.priority>0);
+    const matchStatus=status==="all"||(status==="unowned"&&t.owned===0)||(status==="owned"&&t.owned>0&&remain(t)>0)||(status==="max"&&remain(t)===0)||(status==="near"&&remain(t)>0&&remain(t)<=5)||(status==="favorite"&&t.favorite)||(status==="priority"&&t.priority>0)||(status==="noimage"&&!t.image);
     return (category==="すべて"||t.category===category)&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q));
   });
   rows.sort((a,b)=>{
@@ -216,6 +217,44 @@ $("#editForm").onsubmit=e=>{
   save();$("#editDialog").close();renderAll();toast("保存しました");
 };
 $("#deleteButton").onclick=()=>{const id=$("#editId").value;if(confirm("このツムを削除しますか？")){tsums=tsums.filter(t=>t.id!==id);save();$("#editDialog").close();renderAll()}};
+
+function openDetail(t){
+  detailId=t.id;
+  $("#detailAvatar").innerHTML=avatarHtml(t);
+  $("#detailCategory").textContent=t.category;
+  $("#detailName").textContent=t.name;
+  $("#detailSkill").textContent=skillText(t);
+  $("#detailPercent").textContent=pct(t)+"%";
+  $("#detailBar").style.width=pct(t)+"%";
+  $("#detailOwned").textContent=t.owned;
+  $("#detailRequired").textContent=t.required;
+  $("#detailRemaining").textContent=remain(t);
+  $("#detailCoins").textContent=(remain(t)*30000).toLocaleString("ja-JP");
+  $("#detailOwnedInput").value=t.owned;
+  $("#detailMemo").textContent=t.memo||"メモはありません。";
+  $("#detailFavoriteButton").textContent=t.favorite?"★ お気に入り済み":"☆ お気に入り";
+  $("#detailDialog").showModal();
+}
+$("#closeDetailButton").onclick=()=>$("#detailDialog").close();
+$("#detailEditButton").onclick=()=>{
+  const t=tsums.find(x=>x.id===detailId);if(!t)return;
+  $("#detailDialog").close();openEdit(t);
+};
+$("#detailFavoriteButton").onclick=()=>{
+  const t=tsums.find(x=>x.id===detailId);if(!t)return;
+  t.favorite=!t.favorite;save();renderAll();openDetail(t);
+};
+$("#saveDetailOwnedButton").onclick=()=>{
+  const t=tsums.find(x=>x.id===detailId);if(!t)return;
+  const value=Math.max(0,Math.min(t.required,Number($("#detailOwnedInput").value)||0));
+  t.owned=value;touchRecent(t.id);save();renderAll();openDetail(t);toast("所持数を更新しました");
+};
+$("#openDetailFromEditButton").onclick=()=>{
+  const t=tsums.find(x=>x.id===$("#editId").value);
+  if(!t){toast("追加前のツムは詳細表示できません");return}
+  $("#editDialog").close();openDetail(t);
+};
+
 function parseBox(){
   const names=$("#boxText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),counts=new Map();
   names.forEach(n=>counts.set(n,(counts.get(n)||0)+1));
@@ -288,7 +327,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:6,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:7,exportedAt:new Date().toISOString(),tsums,history,recent},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
@@ -297,6 +336,28 @@ $("#importInput").onchange=e=>{
 };
 $("#mergeMasterButton").onclick=()=>{tsums=mergeMaster(tsums);save();renderAll();toast("収録ツムを再統合しました")};
 $("#resetButton").onclick=()=>{if(confirm("所持数・画像・メモなどをすべて初期化しますか？")){tsums=master();history=[];recent=[];save();saveHistory();saveRecent();renderAll();toast("初期化しました")}};
+
+function runHealthCheck(){
+  const duplicateNames=[...new Set(tsums.map(t=>t.name).filter((name,i,a)=>a.indexOf(name)!==i))];
+  const invalidRequired=tsums.filter(t=>!Number.isFinite(t.required)||t.required<1);
+  const overOwned=tsums.filter(t=>t.owned>t.required);
+  const missingNames=tsums.filter(t=>!t.name.trim());
+  const result=$("#healthResult");
+  const issues=[];
+  if(duplicateNames.length)issues.push(`重複名：${duplicateNames.length}件`);
+  if(invalidRequired.length)issues.push(`必要数異常：${invalidRequired.length}件`);
+  if(overOwned.length)issues.push(`所持数超過：${overOwned.length}件`);
+  if(missingNames.length)issues.push(`名称未設定：${missingNames.length}件`);
+  if(!issues.length){
+    result.className="health-result ok";
+    result.textContent=`問題は見つかりませんでした。登録${tsums.length}体、画像${tsums.filter(t=>t.image).length}体、保存データは正常です。`;
+  }else{
+    result.className="health-result warn";
+    result.textContent="確認が必要です："+issues.join("／");
+  }
+}
+$("#runHealthCheckButton").onclick=runHealthCheck;
+
 const dark=localStorage.getItem("tm-dark")==="1";document.documentElement.classList.toggle("dark",dark);$("#darkToggle").checked=dark;
 $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e.target.checked);localStorage.setItem("tm-dark",e.target.checked?"1":"0")};
 $("#compactToggle").checked=compact;$("#compactToggle").onchange=e=>{compact=e.target.checked;localStorage.setItem("tm-compact",compact?"1":"0");if(activeView==="list")renderList()};
