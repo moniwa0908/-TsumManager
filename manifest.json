@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 6.1",
+  "name": "TsumManager 6.1.1",
   "short_name": "ツム管理",
-  "description": "iPhone Safariの自動ズームと表示崩れを防止し、スマートフォン表示を最適化したツム管理Webアプリ",
+  "description": "ラビットをハピネスツムとして追加したデータ修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,6 +1,6 @@
 
-const KEYS=["tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV61", HISTORY_KEY="tsumManagerHistoryV61", RECENT_KEY="tsumManagerRecentV61", PLAN_KEY="tsumManagerPlansV61", TODAY_KEY="tsumManagerTodayV61", UNDO_KEY="tsumManagerUndoV61", GOAL_KEY="tsumManagerGoalsV61", TICKET_STOCK_KEY="tsumManagerTicketStockV61", SNAPSHOT_KEY="tsumManagerSnapshotsV61", TASK_KEY="tsumManagerTasksV61", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV61";
+const KEYS=["tsumManagerDataV611","tsumManagerDataV61","tsumManagerDataV602","tsumManagerDataV601","tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV611", HISTORY_KEY="tsumManagerHistoryV611", RECENT_KEY="tsumManagerRecentV611", PLAN_KEY="tsumManagerPlansV611", TODAY_KEY="tsumManagerTodayV611", UNDO_KEY="tsumManagerUndoV611", GOAL_KEY="tsumManagerGoalsV611", TICKET_STOCK_KEY="tsumManagerTicketStockV611", SNAPSHOT_KEY="tsumManagerSnapshotsV611", TASK_KEY="tsumManagerTasksV611", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV611";
 const $=q=>document.querySelector(q);
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -1050,7 +1050,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.1.1",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{
