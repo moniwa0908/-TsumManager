@@ -1,12 +1,12 @@
 
-const KEYS=["tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
-const KEY="tsumManagerDataV53", HISTORY_KEY="tsumManagerHistoryV53", RECENT_KEY="tsumManagerRecentV53", PLAN_KEY="tsumManagerPlansV53", TODAY_KEY="tsumManagerTodayV53", UNDO_KEY="tsumManagerUndoV53", GOAL_KEY="tsumManagerGoalsV53", TICKET_STOCK_KEY="tsumManagerTicketStockV53", SNAPSHOT_KEY="tsumManagerSnapshotsV53", TASK_KEY="tsumManagerTasksV53", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV53";
+const KEYS=["tsumManagerDataV60","tsumManagerDataV53","tsumManagerDataV521","tsumManagerDataV52","tsumManagerDataV51","tsumManagerDataV50","tsumManagerDataV40","tsumManagerDataV30","tsumManagerDataV20","tsumManagerDataV12","tsumManagerDataV11","tsumManagerDataV10","tsumManagerDataV9","tsumManagerDataV8","tsumManagerDataV7","tsumManagerDataV6","tsumManagerDataV5","tsumManagerDataV4","tsumManagerDataV3","tsumManagerDataV2","tsumManagerDataV1"];
+const KEY="tsumManagerDataV60", HISTORY_KEY="tsumManagerHistoryV60", RECENT_KEY="tsumManagerRecentV60", PLAN_KEY="tsumManagerPlansV60", TODAY_KEY="tsumManagerTodayV60", UNDO_KEY="tsumManagerUndoV60", GOAL_KEY="tsumManagerGoalsV60", TICKET_STOCK_KEY="tsumManagerTicketStockV60", SNAPSHOT_KEY="tsumManagerSnapshotsV60", TASK_KEY="tsumManagerTasksV60", UNDO_HISTORY_KEY="tsumManagerUndoHistoryV60";
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
   id:t.id||crypto.randomUUID(),name:String(t.name||"名称未設定"),category:String(t.category||"未分類"),
   required:Math.max(1,Number(t.required||t.maxCopies||36)),owned:Math.max(0,Number(t.owned||0)),
-  releaseYear:Number(t.releaseYear||t.year||0),releaseDate:String(t.releaseDate||""),releaseOrder:Number(t.releaseOrder||0),favorite:!!t.favorite,image:String(t.image||""),
+  releaseYear:Number(t.releaseYear||t.year||0),releaseDate:String(t.releaseDate||""),releaseOrder:Number(t.releaseOrder||0),series:String(t.series||""),favorite:!!t.favorite,image:String(t.image||""),
   memo:String(t.memo||t.note||""),priority:Number(t.priority||0),
   tags:Array.isArray(t.tags)?t.tags.map(x=>String(x).trim()).filter(Boolean):String(t.tags||"").split(",").map(x=>x.trim()).filter(Boolean),
   coinRating:Math.max(0,Math.min(5,Number(t.coinRating||0))),
@@ -57,7 +57,7 @@ let undoHistory=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_HISTORY_KE
 let viewerIndex=0;
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||"";
 let undoState=(()=>{try{return JSON.parse(localStorage.getItem(UNDO_KEY)||"null")}catch(e){return null}})();
-let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,increment=1;
+let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){localStorage.setItem(KEY,JSON.stringify(tsums))}
 function saveHistory(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,50)))}
@@ -138,6 +138,7 @@ function cardHtml(t){
       </div>
       <div class="meta">${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)} ・ ${pct(t)}%</div>
       <div class="release-label">${t.releaseDate?`登場 ${esc(t.releaseDate.replace("-", "年"))}月`:"登場年月未登録"}</div>
+      ${t.series?`<div class="series-label">${esc(t.series)}</div>`:""}
       ${t.tags.length?`<div class="tag-list">${t.tags.slice(0,3).map(tag=>`<span class="tag-pill">${esc(tag)}</span>`).join("")}</div>`:""}
       ${(t.coinRating||t.scoreRating||t.easeRating)?`<div class="rating-stars">C${"★".repeat(t.coinRating)} S${"★".repeat(t.scoreRating)} E${"★".repeat(t.easeRating)}</div>`:""}
       <div class="mini-progress"><i style="width:${pct(t)}%"></i></div>
@@ -502,10 +503,13 @@ function renderList(){
   const releaseYears=[...new Set(tsums.filter(t=>t.releaseDate).map(t=>t.releaseDate.slice(0,4)))].sort();
   $("#releaseYearFilter").innerHTML=`<option value="all">登場年：すべて</option>`+releaseYears.map(y=>`<option value="${y}" ${releaseYearFilter===y?"selected":""}>${y}年</option>`).join("");
   $("#releaseMonthFilter").innerHTML=`<option value="all">登場月：すべて</option>`+Array.from({length:12},(_,i)=>String(i+1).padStart(2,"0")).map(m=>`<option value="${m}" ${releaseMonthFilter===m?"selected":""}>${Number(m)}月</option>`).join("");
+  const seriesList=[...new Set(tsums.map(t=>t.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
+  $("#seriesFilter").innerHTML=`<option value="all">シリーズ：すべて</option>`+seriesList.map(s=>`<option value="${esc(s)}" ${seriesFilter===s?"selected":""}>${esc(s)}</option>`).join("");
   let rows=tsums.filter(t=>{
     const matchStatus=status==="all"||(status==="unowned"&&t.owned===0)||(status==="owned"&&t.owned>0&&remain(t)>0)||(status==="max"&&remain(t)===0)||(status==="near"&&remain(t)>0&&remain(t)<=5)||(status==="favorite"&&t.favorite)||(status==="priority"&&t.priority>0)||(status==="noimage"&&!t.image);
     const releaseMatch=(releaseYearFilter==="all"||(t.releaseDate&&t.releaseDate.slice(0,4)===releaseYearFilter))&&(releaseMonthFilter==="all"||(t.releaseDate&&t.releaseDate.slice(5,7)===releaseMonthFilter));
-    return (category==="すべて"||t.category===category)&&(activeTag==="すべて"||t.tags.includes(activeTag))&&releaseMatch&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
+    const seriesMatch=seriesFilter==="all"||t.series===seriesFilter;
+    return (category==="すべて"||t.category===category)&&(activeTag==="すべて"||t.tags.includes(activeTag))&&releaseMatch&&seriesMatch&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
   });
   rows.sort((a,b)=>{
     if(sort==="remain")return remain(a)-remain(b)||a.name.localeCompare(b.name,"ja");
@@ -522,6 +526,7 @@ function renderList(){
       if(a.releaseDate)return -1;if(b.releaseDate)return 1;
       return b.releaseOrder-a.releaseOrder||a.name.localeCompare(b.name,"ja");
     }
+    if(sort==="series")return (a.series||"未登録").localeCompare(b.series||"未登録","ja")||a.name.localeCompare(b.name,"ja");
     return a.name.localeCompare(b.name,"ja");
   });
   $("#resultCount").textContent=rows.length+"体表示";
@@ -584,7 +589,11 @@ function renderBox(){
 function renderSettings(){
   $("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
   const dated=tsums.filter(t=>t.releaseDate).length;
+  const seriesCount=tsums.filter(t=>t.series).length;
+  const imageCount=tsums.filter(t=>t.image).length;
   $("#releaseDateCoverage").textContent=`${dated}/${tsums.length}体`;
+  $("#seriesCoverage").textContent=`${seriesCount}/${tsums.length}体`;
+  $("#masterDataStatus").innerHTML=`<div><b>${dated}</b><span>年月登録</span></div><div><b>${seriesCount}</b><span>シリーズ登録</span></div><div><b>${imageCount}</b><span>画像登録</span></div>`;
   renderUndoHistory();
 }
 function renderAll(){
@@ -601,7 +610,7 @@ function renderAll(){
 function openEdit(t=null){
   $("#dialogTitle").textContent=t?"ツムを編集":"ツムを追加";$("#editId").value=t?.id||"";
   $("#editName").value=t?.name||"";$("#editCategory").value=t?.category||"プレミアム";
-  $("#editRequired").value=t?.required||36;$("#editReleaseDate").value=t?.releaseDate||"";$("#editOwned").value=t?.owned||0;
+  $("#editRequired").value=t?.required||36;$("#editReleaseDate").value=t?.releaseDate||"";$("#editSeries").value=t?.series||"";$("#editOwned").value=t?.owned||0;
   $("#editPriority").value=String(t?.priority||0);$("#editTags").value=(t?.tags||[]).join(",");
   $("#editCoinRating").value=String(t?.coinRating||0);$("#editScoreRating").value=String(t?.scoreRating||0);$("#editEaseRating").value=String(t?.easeRating||0);
   $("#editMissionTags").value=(t?.missionTags||[]).join(",");$("#editMemo").value=t?.memo||"";
@@ -643,7 +652,7 @@ async function applySelectedImage(file){
 $("#editImageInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editCameraInput").onchange=e=>{const f=e.target.files[0];if(f)applySelectedImage(f)};
 $("#editForm").onsubmit=e=>{
-  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
+  e.preventDefault();const id=$("#editId").value,obj=norm({id:id||undefined,name:$("#editName").value.trim(),category:$("#editCategory").value.trim(),required:$("#editRequired").value,owned:$("#editOwned").value,releaseDate:$("#editReleaseDate").value,releaseYear:$("#editReleaseDate").value?Number($("#editReleaseDate").value.slice(0,4)):0,releaseOrder:tsums.find(t=>t.id===id)?.releaseOrder||tsums.length+1,series:$("#editSeries").value.trim(),priority:$("#editPriority").value,image:editingImage,tags:$("#editTags").value,
   coinRating:$("#editCoinRating").value,scoreRating:$("#editScoreRating").value,easeRating:$("#editEaseRating").value,
   missionTags:$("#editMissionTags").value,memo:$("#editMemo").value});
   if(id){const i=tsums.findIndex(t=>t.id===id);tsums[i]={...tsums[i],...obj,id}}else tsums.push(obj);
@@ -724,6 +733,7 @@ $("#quickAddButton").onclick=()=>openEdit();
 $("#searchInput").oninput=renderList;$("#sortSelect").onchange=renderList;
 $("#releaseYearFilter").onchange=e=>{releaseYearFilter=e.target.value;renderList()};
 $("#releaseMonthFilter").onchange=e=>{releaseMonthFilter=e.target.value;renderList()};
+$("#seriesFilter").onchange=e=>{seriesFilter=e.target.value;renderList()};
 $("#incrementMode").onclick=()=>{increment=increment===1?5:1;$("#incrementMode").textContent="＋"+increment;toast("増減単位を"+increment+"にしました")};
 
 $("#galleryMode").onclick=()=>{
@@ -825,10 +835,18 @@ $("#bulkImageInput").onchange=async e=>{
   let matched=0,unmatched=[],failed=[];
   for(const file of files){
     const base=normalizeImageFileName(file.name);
-    const t=tsums.find(x=>{
-      const name=normalizeImageFileName(x.name);
-      return name===base||name.replace(/\s/g,"")===base.replace(/\s/g,"");
+    const compactBase=base.replace(/\s/g,"");
+    let t=tsums.find(x=>{
+      const name=normalizeImageFileName(x.name),compactName=name.replace(/\s/g,"");
+      return name===base||compactName===compactBase;
     });
+    if(!t&&$("#fuzzyImageMatchToggle").checked){
+      const candidates=tsums.filter(x=>{
+        const compactName=normalizeImageFileName(x.name).replace(/\s/g,"");
+        return compactName.includes(compactBase)||compactBase.includes(compactName);
+      });
+      if(candidates.length===1)t=candidates[0];
+    }
     if(!t){unmatched.push(file.name);continue}
     try{
       t.image=await compressImageFile(file);
@@ -836,10 +854,86 @@ $("#bulkImageInput").onchange=async e=>{
     }catch(err){failed.push(file.name)}
   }
   save();renderAll();
-  $("#bulkImageResult").innerHTML=`登録成功：${matched}件<br>名前不一致：${unmatched.length}件<br>読込失敗：${failed.length}件${unmatched.length?`<br><br>名前不一致：<br>${unmatched.slice(0,20).map(esc).join("<br>")}${unmatched.length>20?"<br>ほか":""}`:""}`;
+  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">登録成功：${matched}件</span><br><span class="bulk-result-warn">名前不一致：${unmatched.length}件</span><br>読込失敗：${failed.length}件${unmatched.length?`<br><br>名前不一致：<br>${unmatched.slice(0,30).map(esc).join("<br>")}${unmatched.length>30?"<br>ほか":""}`:""}`;
   toast(`${matched}体の画像を登録しました`);
   e.target.value="";
 };
+
+
+function masterDataCsvEscape(value){
+  const text=String(value??"");
+  return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
+}
+$("#exportMasterCsvButton").onclick=()=>{
+  const rows=tsums.map(t=>[t.name,t.releaseDate,t.series,t.releaseOrder].map(masterDataCsvEscape).join(","));
+  const csv="\uFEFF"+["name,releaseDate,series,releaseOrder",...rows].join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`TsumManager_master_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$("#importMasterCsvInput").onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const rows=parseCsv(String(reader.result).replace(/^\uFEFF/,""));
+      if(rows.length<2)throw new Error("データがありません");
+      const header=rows[0].map(x=>x.trim());
+      const pos=name=>header.indexOf(name);
+      let updated=0,missing=[];
+      for(const row of rows.slice(1)){
+        const name=row[pos("name")]?.trim();if(!name)continue;
+        const t=tsums.find(x=>x.name===name);
+        if(!t){missing.push(name);continue}
+        if(pos("releaseDate")>=0){
+          const value=(row[pos("releaseDate")]||"").trim();
+          if(!value||/^\d{4}-\d{2}$/.test(value)){
+            t.releaseDate=value;
+            t.releaseYear=value?Number(value.slice(0,4)):0;
+          }
+        }
+        if(pos("series")>=0)t.series=(row[pos("series")]||"").trim();
+        if(pos("releaseOrder")>=0&&Number(row[pos("releaseOrder")])>0)t.releaseOrder=Number(row[pos("releaseOrder")]);
+        updated++;
+      }
+      save();renderAll();renderSettings();
+      if(missing.length)openMessage("年月・シリーズCSV読込",`更新：${updated}体\n未登録名：${missing.slice(0,30).join("、")}${missing.length>30?" ほか":""}`);
+      else toast(`${updated}体の年月・シリーズを更新しました`);
+    }catch(err){alert("CSVを読み込めませんでした："+err.message)}
+  };
+  reader.readAsText(file);
+};
+function openMissingData(mode){
+  missingMode=mode;
+  $("#missingDataTitle").textContent=mode==="release"?"登場年月未登録":"シリーズ未登録";
+  $("#missingDataSearch").value="";
+  renderMissingData();
+  $("#missingDataDialog").showModal();
+}
+function renderMissingData(){
+  const q=$("#missingDataSearch").value.trim().toLowerCase();
+  const rows=tsums.filter(t=>(missingMode==="release"?!t.releaseDate:!t.series)&&t.name.toLowerCase().includes(q));
+  $("#missingDataList").innerHTML=rows.map(t=>`<div class="missing-data-item">
+    <strong>${esc(t.name)}</strong>
+    <input type="month" data-missing-release="${t.id}" value="${esc(t.releaseDate)}">
+    <input type="text" data-missing-series="${t.id}" value="${esc(t.series)}" placeholder="シリーズ">
+  </div>`).join("")||`<div class="helper">未登録データはありません。</div>`;
+  $("#missingDataList").querySelectorAll("[data-missing-release]").forEach(input=>input.onchange=()=>{
+    const t=tsums.find(x=>x.id===input.dataset.missingRelease);if(!t)return;
+    t.releaseDate=input.value;t.releaseYear=input.value?Number(input.value.slice(0,4)):0;save();renderSettings();
+  });
+  $("#missingDataList").querySelectorAll("[data-missing-series]").forEach(input=>input.onchange=()=>{
+    const t=tsums.find(x=>x.id===input.dataset.missingSeries);if(!t)return;
+    t.series=input.value.trim();save();renderSettings();
+  });
+}
+$("#showMissingReleaseButton").onclick=()=>openMissingData("release");
+$("#showMissingSeriesButton").onclick=()=>openMissingData("series");
+$("#missingDataSearch").oninput=renderMissingData;
+$("#closeMissingDataButton").onclick=()=>{$("#missingDataDialog").close();renderAll()};
 
 $("#removeImageButton").onclick=()=>{
   if(!editingImage){toast("画像は登録されていません");return}
@@ -865,7 +959,7 @@ $("#closeImageManagerButton").onclick=()=>$("#imageManagerDialog").close();
 $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("最近使った履歴を削除しました")};
 
 $("#exportButton").onclick=()=>{
-  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"5.3",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"TsumManager",version:"6.0",exportedAt:new Date().toISOString(),tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
 };
 $("#importInput").onchange=e=>{

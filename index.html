@@ -10,14 +10,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 5.3</title>
+  <title>TsumManager 6.0</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 5.3</p>
+      <p>TsumManager 6.0</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -165,6 +165,7 @@
             <option value="favorite">お気に入り順</option>
             <option value="releaseOld">リリース順（古い順）</option>
             <option value="releaseNew">リリース順（新しい順）</option>
+            <option value="series">シリーズ順</option>
           </select>
         </div>
         <div id="categoryChips" class="chips"></div>
@@ -173,6 +174,7 @@
         <div class="release-filter-row">
           <select id="releaseYearFilter"><option value="all">登場年：すべて</option></select>
           <select id="releaseMonthFilter"><option value="all">登場月：すべて</option></select>
+          <select id="seriesFilter"><option value="all">シリーズ：すべて</option></select>
         </div>
       </article>
 
@@ -391,9 +393,23 @@
 
 
 
+
       <article class="panel settings-panel">
+        <h2>登場年月・シリーズデータ</h2>
+        <p class="helper">未登録データの確認や、CSVによる一括更新ができます。</p>
+        <div id="masterDataStatus" class="data-status-grid"></div>
+        <button id="exportMasterCsvButton">年月・シリーズCSVを書き出す</button>
+        <label class="file-button">年月・シリーズCSVを読み込む
+          <input id="importMasterCsvInput" type="file" accept=".csv,text/csv">
+        </label>
+        <button id="showMissingReleaseButton">登場年月未登録を一覧表示</button>
+        <button id="showMissingSeriesButton">シリーズ未登録を一覧表示</button>
+      </article>
+
+      <article class="panel settings-panel" id="bulkImagePanel">
         <h2>画像の一括登録</h2>
-        <p class="helper">複数画像を選択すると、ファイル名とツム名が一致する画像を自動登録します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
+        <p class="helper">画像ファイル名をツム名と同じにしてください。拡張子はjpg・png・webpなどに対応します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
+        <label class="switch-row"><span>似た名前も候補として照合</span><input id="fuzzyImageMatchToggle" type="checkbox" checked></label>
         <label class="file-button">複数画像を選択
           <input id="bulkImageInput" type="file" accept="image/*" multiple>
         </label>
@@ -427,6 +443,7 @@
           <div><dt>保存方式</dt><dd>Safari端末内保存</dd></div>
           <div><dt>オフライン</dt><dd>対応</dd></div>
           <div><dt>登場年月登録</dt><dd id="releaseDateCoverage">0/0体</dd></div>
+          <div><dt>シリーズ登録</dt><dd id="seriesCoverage">0/0体</dd></div>
           <div><dt>データ引継ぎ</dt><dd>Ver.1〜5.1対応</dd></div>
         </dl>
       </article>
@@ -454,6 +471,7 @@
       <label>カテゴリ<input id="editCategory" required></label>
       <label>スキルマ必要数<input id="editRequired" type="number" min="1" max="999" required></label>
       <label>登場年月<input id="editReleaseDate" type="month"></label>
+      <label>シリーズ<input id="editSeries" placeholder="例：ミッキー＆フレンズ"></label>
     </div>
     <div class="form-grid">
       <label>現在数<input id="editOwned" type="number" min="0" max="999" required></label>
@@ -522,6 +540,18 @@
 
 
 
+
+
+<dialog id="missingDataDialog">
+  <div class="missing-data-dialog">
+    <div class="section-title">
+      <h2 id="missingDataTitle">未登録データ</h2>
+      <button id="closeMissingDataButton">閉じる</button>
+    </div>
+    <input id="missingDataSearch" type="search" placeholder="ツム名を検索">
+    <div id="missingDataList" class="missing-data-list"></div>
+  </div>
+</dialog>
 
 <dialog id="taskDialog">
   <form id="taskForm">
