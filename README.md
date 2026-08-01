@@ -1,13 +1,33 @@
-# TsumManager Ver.1
+# TsumManager Ver.2
 
-## アップロード
-GitHubのTsumManagerリポジトリで、Add file → Upload files を選び、
-index.html / manifest.json / service-worker.js をアップロードしてCommit changesします。
+iPhoneのSafari／GitHub Pagesで動く、ツムツムのスキルマ進捗管理Webアプリです。
 
-## GitHub Pages
-Settings → Pages → Deploy from a branch → main → /(root) → Save
+## Ver.2の主な機能
 
-公開URL:
-https://moniwa0908.github.io/TsumManager/
+- Ver.1のSafari保存データを自動移行
+- 所持数の＋／−管理
+- 未所持・所持済み・スキルマ・お気に入り絞り込み
+- カテゴリ絞り込み、検索、並べ替え
+- スキルマ率、残り必要数、必要コイン概算
+- ツムの追加・編集・削除
+- 画像URL、登場年、メモの登録
+- JSONバックアップ出力／読込
+- 一覧の一括追加
+- オフライン対応（PWA）
 
-Ver.1は動作確認用の初期データ入りです。ツム追加、検索、進捗、自動保存、バックアップに対応しています。
+## GitHubへの更新方法
+
+リポジトリの「Add file / ＋」→「Upload files」を開き、次の4ファイルをアップロードして上書きします。
+
+- index.html
+- manifest.json
+- service-worker.js
+- icon.svg
+
+README.mdも必要に応じて上書きしてください。
+
+アップロード後に「Commit changes」を押します。GitHub Pagesへの反映には通常数分かかります。
+
+## 注意
+
+画像ファイル自体は同梱していません。各ツムの編集画面に、自分で用意した画像URLを設定できます。
