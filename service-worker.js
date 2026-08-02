@@ -1,4 +1,4 @@
-const CACHE="tsum-manager-8-3-1-name-match-fix-20260802-01";
+const CACHE="tsum-manager-8-3-2-mr-incredible-fix-20260802-02";
 const ASSETS=["./","./index.html","./style.css","./app.js","./tsums-data.js","./manifest.json","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));

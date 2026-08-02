@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3.1 Name Match Fix",
-  "short_name": "ツム管理",
-  "description": "ベイマックス2.0など小数点を含むツム名の画像一括登録を修正した安定版",
+  "name": "TsumManager 8.3.2 Mr. Incredible Fix",
+  "short_name": "TsumManager",
+  "description": "ベイマックス2.0の画像名照合とミスター・インクレディブルの名称を修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
