@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.1.1 UI Fix",
+  "name": "TsumManager 8.2 Stable",
   "short_name": "ツム管理",
-  "description": "起動時エラーを修正し、IndexedDBの保存画像を再起動後も読み込めるようにした安全保存版",
+  "description": "Ver.8.0.1の安全保存設計を土台に、一覧表示停止を防ぐ防御処理を追加した安定版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

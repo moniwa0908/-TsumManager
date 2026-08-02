@@ -17,54 +17,24 @@ const KEY="tm-user-data-stable-v1",
   IMAGE_STORE_NAME="images";
 const $=q=>document.querySelector(q);
 
-const DISPLAY_SETTINGS_KEY="tm-display-settings-stable-v1";
-
-function loadDisplaySettings(){
-  try{
-    return {
-      textSize:"standard",
-      imageSize:"standard",
-      ...JSON.parse(localStorage.getItem(DISPLAY_SETTINGS_KEY)||"{}")
-    };
-  }catch(e){
-    return {textSize:"standard",imageSize:"standard"};
-  }
+function showStartupError(message){
+  const banner=document.querySelector("#startupErrorBanner");
+  if(!banner)return;
+  banner.hidden=false;
+  banner.textContent=message;
 }
-
-let displaySettings=loadDisplaySettings();
-
-function applyDisplaySettings(){
-  document.body.dataset.textSize=displaySettings.textSize;
-  document.body.dataset.imageSize=displaySettings.imageSize;
-
-  const textSelect=$("#textSizeSelect");
-  const imageSelect=$("#imageSizeSelect");
-  if(textSelect)textSelect.value=displaySettings.textSize;
-  if(imageSelect)imageSelect.value=displaySettings.imageSize;
+window.addEventListener("error",event=>{
+  console.error("TsumManager error",event.error||event.message);
+  showStartupError("アプリ処理でエラーが発生しました。設定の「一覧を再表示」を押してください。");
+});
+window.addEventListener("unhandledrejection",event=>{
+  console.error("TsumManager promise error",event.reason);
+  showStartupError("保存または画像処理でエラーが発生しました。入力データは消去しないでください。");
+});
+function setOptionalHandler(selector,eventName,handler){
+  const el=document.querySelector(selector);
+  if(el)el[eventName]=handler;
 }
-
-function saveDisplaySettings(){
-  localStorage.setItem(DISPLAY_SETTINGS_KEY,JSON.stringify(displaySettings));
-  applyDisplaySettings();
-}
-
-const textSizeSelect=$("#textSizeSelect");
-if(textSizeSelect){
-  textSizeSelect.onchange=()=>{
-    displaySettings.textSize=textSizeSelect.value;
-    saveDisplaySettings();
-  };
-}
-
-const imageSizeSelect=$("#imageSizeSelect");
-if(imageSizeSelect){
-  imageSizeSelect.onchange=()=>{
-    displaySettings.imageSize=imageSizeSelect.value;
-    saveDisplaySettings();
-  };
-}
-
-applyDisplaySettings();
 
 
 // iPhone Safariの意図しない画面拡大を防止する。
@@ -302,22 +272,12 @@ async function hydrateImagesFromDb(){
     const byId=new Map(images.map(x=>[x.id,x.image]));
     const byName=new Map(images.map(x=>[x.name,x.image]));
     for(const t of tsums){
-      let image=byId.get(t.id)||byName.get(t.name);
-      if(!image&&Array.isArray(t.aliases)){
-        for(const alias of t.aliases){
-          image=byName.get(alias);
-          if(image)break;
-        }
-      }
-      t.image=image||"";
+      const image=byId.get(t.id)||byName.get(t.name);
+      if(image)t.image=image;
     }
     renderAll();
-    renderSafeStorageStatus();
-    return images.length;
   }catch(err){
-    console.error("画像の読込に失敗",err);
-    renderSafeStorageStatus(0,err);
-    return 0;
+    console.warn("画像の読込に失敗",err);
   }
 }
 async function migrateLegacyImages(){
@@ -338,12 +298,13 @@ async function migrateLegacyImages(){
 }
 async function initializeSafeStorage(){
   try{
-    const legacyImageCount=legacyRecoveredRows.filter(t=>t&&t.image).length;
     const migrated=await migrateLegacyImages();
-    const storedCount=await hydrateImagesFromDb();
+    await hydrateImagesFromDb();
     save();
 
-    if(legacyRecoveredRows.length&&storedCount>=legacyImageCount){
+    // Stable metadata and IndexedDB images have been written successfully.
+    // Old combined arrays are removed to free Safari storage.
+    if(legacyRecoveredRows.length){
       for(const key of KEYS){
         if(key!==KEY)localStorage.removeItem(key);
       }
@@ -391,6 +352,7 @@ let viewerIndex=0,pendingBulkImages=[];
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||localStorage.getItem("tsumManagerTodayV633")||"";
 let undoState=readJsonWithLegacy(UNDO_KEY,["tsumManagerUndoV633","tsumManagerUndoV632"],null);
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
+let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){
   try{
     localStorage.setItem(KEY,JSON.stringify(buildStableUserStore()));
@@ -650,8 +612,6 @@ function renderMonthlyReport(){
   el.innerHTML=`<div><b>${ownedDiff>=0?"+":""}${ownedDiff}</b><span>所持ツム増加</span></div><div><b>${maxDiff>=0?"+":""}${maxDiff}</b><span>スキルマ増加</span></div><div><b>${progressDiff>=0?"+":""}${progressDiff}%</b><span>進捗増加</span></div><div><b>${taskDone}</b><span>今日の完了タスク</span></div>`;
 }
 function renderUndoHistory(){
-  const holder=$("#undoHistoryList");
-  if(!holder)return;
   const el=$("#undoHistoryList");if(!el)return;
   el.innerHTML=undoHistory.length?undoHistory.map((u,i)=>`<div class="history-item"><span>${esc(u.description)}</span><span>${new Date(u.time).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span><button data-undo-history-index="${i}">戻す</button></div>`).join(""):`<div class="helper">取り消し履歴はありません。</div>`;
   el.querySelectorAll("[data-undo-history-index]").forEach(b=>b.onclick=()=>applyUndoHistory(Number(b.dataset.undoHistoryIndex)));
@@ -697,6 +657,7 @@ $("#taskForm").onsubmit=e=>{
 };
 $("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
 $("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
+const clearUndoHistoryButtonEl=$("#clearUndoHistoryButton");if(clearUndoHistoryButtonEl)clearUndoHistoryButtonEl.onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
 $("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
 $("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
 $("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
@@ -978,7 +939,7 @@ function renderBox(){
 }
 function renderSettings(){
   setTimeout(renderRescueStatus,0);
-  $("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
+  const masterCountEl=$("#masterCount");if(masterCountEl)masterCountEl.textContent=window.TSUM_MASTER_DATA.length+"体";
   const dated=tsums.filter(t=>t.releaseDate).length;
   const seriesCount=tsums.filter(t=>t.series).length;
   const imageCount=tsums.filter(t=>t.image).length;
@@ -1227,10 +1188,12 @@ $("#galleryMode").onclick=()=>{
   if(gallery)compact=false;
   localStorage.setItem("tm-gallery",gallery?"1":"0");
   localStorage.setItem("tm-compact",compact?"1":"0");
+  const compactToggleEl=$("#compactToggle");if(compactToggleEl)compactToggleEl.checked=compact;
   renderList();
 };
 $("#refreshRecommendButton").onclick=()=>{renderHome();toast("おすすめ候補を再計算しました")};
 
+$("#layoutMode").onclick=()=>{compact=!compact;gallery=false;localStorage.setItem("tm-gallery","0");localStorage.setItem("tm-compact",compact?"1":"0");const compactToggleEl=$("#compactToggle");if(compactToggleEl)compactToggleEl.checked=compact;renderList()};
 $("#clearBoxButton").onclick=()=>{$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。"};
 $("#previewBoxButton").onclick=previewBox;
 $("#applyBoxButton").onclick=()=>{
@@ -1519,7 +1482,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.1.1 UI Fix",
+    version:"8.2 Stable",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1601,6 +1564,7 @@ $("#taskForm").onsubmit=e=>{
 };
 $("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
 $("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
+const clearUndoHistoryButtonEl=$("#clearUndoHistoryButton");if(clearUndoHistoryButtonEl)clearUndoHistoryButtonEl.onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
 $("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
 $("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
 $("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
@@ -1680,7 +1644,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.1.1 UI Fix",
+    version:"8.2 Stable",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1788,7 +1752,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.1.1 UI Fix",
+      version:"8.2 Stable",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2008,9 +1972,10 @@ $("#runHealthCheckButton").onclick=runHealthCheck;
 
 const dark=localStorage.getItem("tm-dark")==="1";document.documentElement.classList.toggle("dark",dark);$("#darkToggle").checked=dark;
 $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e.target.checked);localStorage.setItem("tm-dark",e.target.checked?"1":"0")};
+const compactToggleEl=$("#compactToggle");if(compactToggleEl)compactToggleEl.checked=compact;const compactToggleHandlerEl=$("#compactToggle");if(compactToggleHandlerEl)compactToggleHandlerEl.onchange=e=>{compact=e.target.checked;gallery=false;localStorage.setItem("tm-compact",compact?"1":"0");localStorage.setItem("tm-gallery","0");if(activeView==="list")renderList()};
 const masterCountEl=$("#masterCount");if(masterCountEl)masterCountEl.textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
-renderAll();showView("home");initializeSafeStorage();
+renderAll();showView("home");renderStableStatus();initializeSafeStorage().then(()=>renderStableStatus("安全保存を確認しました。")).catch(err=>showStartupError(err?.message||String(err)));
 
 
 function renderRescueStatus(){
@@ -2028,7 +1993,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.1.1 UI Fix",
+        version:"8.2 Stable",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
@@ -2051,15 +2016,50 @@ if(saveUserDataNowButton){
   };
 }
 
-const reloadStoredImagesButton=$("#reloadStoredImagesButton");
-if(reloadStoredImagesButton){
-  reloadStoredImagesButton.onclick=async()=>{
-    reloadStoredImagesButton.disabled=true;
-    const oldText=reloadStoredImagesButton.textContent;
-    reloadStoredImagesButton.textContent="画像を読み込んでいます…";
-    const count=await hydrateImagesFromDb();
-    reloadStoredImagesButton.disabled=false;
-    reloadStoredImagesButton.textContent=oldText;
-    toast(`${count}件の保存済み画像を確認しました`);
+
+function renderStableStatus(extra=""){
+  const el=$("#stableStatus");
+  if(!el)return;
+  const imageCount=tsums.filter(t=>t.image).length;
+  const ownedCount=tsums.filter(t=>Number(t.owned||0)>0).length;
+  el.innerHTML=`<strong>一覧表示：正常</strong><br>収録ツム：${tsums.length}体<br>入力済み：${ownedCount}体<br>表示中画像：${imageCount}体${extra?`<br>${extra}`:""}`;
+}
+
+const rerenderListButton=$("#rerenderListButton");
+if(rerenderListButton){
+  rerenderListButton.onclick=()=>{
+    try{
+      renderAll();
+      showView("list");
+      const banner=$("#startupErrorBanner");
+      if(banner)banner.hidden=true;
+      renderStableStatus("一覧を再表示しました。");
+      toast("一覧を再表示しました");
+    }catch(err){
+      console.error(err);
+      showStartupError("一覧の再表示に失敗しました："+(err?.message||String(err)));
+    }
   };
 }
+
+const reloadImagesStableButton=$("#reloadImagesStableButton");
+if(reloadImagesStableButton){
+  reloadImagesStableButton.onclick=async()=>{
+    reloadImagesStableButton.disabled=true;
+    const oldText=reloadImagesStableButton.textContent;
+    reloadImagesStableButton.textContent="画像を確認中…";
+    try{
+      await hydrateImagesFromDb();
+      renderAll();
+      renderStableStatus("保存済み画像を再読み込みしました。");
+      toast("保存済み画像を再読み込みしました");
+    }catch(err){
+      console.error(err);
+      showStartupError("画像の再読み込みに失敗しました："+(err?.message||String(err)));
+    }finally{
+      reloadImagesStableButton.disabled=false;
+      reloadImagesStableButton.textContent=oldText;
+    }
+  };
+}
+
