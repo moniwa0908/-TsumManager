@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3.2 Mr. Incredible Fix",
+  "name": "TsumManager 8.3.3 Enchanted Fix",
   "short_name": "TsumManager",
-  "description": "ベイマックス2.0の画像名照合とミスター・インクレディブルの名称を修正した版",
+  "description": "エンチャンテッドシンデレラとエンチャンテッドオーロラを追加した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
