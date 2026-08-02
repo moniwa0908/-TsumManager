@@ -302,12 +302,22 @@ async function hydrateImagesFromDb(){
     const byId=new Map(images.map(x=>[x.id,x.image]));
     const byName=new Map(images.map(x=>[x.name,x.image]));
     for(const t of tsums){
-      const image=byId.get(t.id)||byName.get(t.name);
-      if(image)t.image=image;
+      let image=byId.get(t.id)||byName.get(t.name);
+      if(!image&&Array.isArray(t.aliases)){
+        for(const alias of t.aliases){
+          image=byName.get(alias);
+          if(image)break;
+        }
+      }
+      t.image=image||"";
     }
     renderAll();
+    renderSafeStorageStatus();
+    return images.length;
   }catch(err){
-    console.warn("画像の読込に失敗",err);
+    console.error("画像の読込に失敗",err);
+    renderSafeStorageStatus(0,err);
+    return 0;
   }
 }
 async function migrateLegacyImages(){
@@ -328,13 +338,12 @@ async function migrateLegacyImages(){
 }
 async function initializeSafeStorage(){
   try{
+    const legacyImageCount=legacyRecoveredRows.filter(t=>t&&t.image).length;
     const migrated=await migrateLegacyImages();
-    await hydrateImagesFromDb();
+    const storedCount=await hydrateImagesFromDb();
     save();
 
-    // Stable metadata and IndexedDB images have been written successfully.
-    // Old combined arrays are removed to free Safari storage.
-    if(legacyRecoveredRows.length){
+    if(legacyRecoveredRows.length&&storedCount>=legacyImageCount){
       for(const key of KEYS){
         if(key!==KEY)localStorage.removeItem(key);
       }
@@ -382,7 +391,6 @@ let viewerIndex=0,pendingBulkImages=[];
 let todayTrainingId=localStorage.getItem(TODAY_KEY)||localStorage.getItem("tsumManagerTodayV633")||"";
 let undoState=readJsonWithLegacy(UNDO_KEY,["tsumManagerUndoV633","tsumManagerUndoV632"],null);
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
-let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
 function save(){
   try{
     localStorage.setItem(KEY,JSON.stringify(buildStableUserStore()));
@@ -689,7 +697,6 @@ $("#taskForm").onsubmit=e=>{
 };
 $("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
 $("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
-$("#clearUndoHistoryButton").onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
 $("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
 $("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
 $("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
@@ -1220,12 +1227,10 @@ $("#galleryMode").onclick=()=>{
   if(gallery)compact=false;
   localStorage.setItem("tm-gallery",gallery?"1":"0");
   localStorage.setItem("tm-compact",compact?"1":"0");
-  $("#compactToggle").checked=compact;
   renderList();
 };
 $("#refreshRecommendButton").onclick=()=>{renderHome();toast("おすすめ候補を再計算しました")};
 
-$("#layoutMode").onclick=()=>{compact=!compact;gallery=false;localStorage.setItem("tm-gallery","0");localStorage.setItem("tm-compact",compact?"1":"0");$("#compactToggle").checked=compact;renderList()};
 $("#clearBoxButton").onclick=()=>{$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。"};
 $("#previewBoxButton").onclick=previewBox;
 $("#applyBoxButton").onclick=()=>{
@@ -1514,7 +1519,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.1 UI",
+    version:"8.1.1 UI Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1596,7 +1601,6 @@ $("#taskForm").onsubmit=e=>{
 };
 $("#deleteTaskButton").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("このタスクを削除しますか？")){dailyTasks=dailyTasks.filter(t=>t.id!==id);saveTasks();$("#taskDialog").close();renderDailyTasks();renderMonthlyReport()}};
 $("#refreshMonthlyReportButton").onclick=()=>{renderMonthlyReport();toast("月次レポートを更新しました")};
-$("#clearUndoHistoryButton").onclick=()=>{if(confirm("取り消し履歴を削除しますか？")){undoHistory=[];saveUndoHistory();renderUndoHistory()}};
 $("#closeImageViewerButton").onclick=()=>$("#imageViewerDialog").close();
 $("#prevImageButton").onclick=()=>{viewerIndex=Math.max(0,viewerIndex-1);renderImageViewer()};
 $("#nextImageButton").onclick=()=>{viewerIndex=Math.min(imageRows().length-1,viewerIndex+1);renderImageViewer()};
@@ -1676,7 +1680,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.1 UI",
+    version:"8.1.1 UI Fix",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1784,7 +1788,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.1 UI",
+      version:"8.1.1 UI Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2004,7 +2008,7 @@ $("#runHealthCheckButton").onclick=runHealthCheck;
 
 const dark=localStorage.getItem("tm-dark")==="1";document.documentElement.classList.toggle("dark",dark);$("#darkToggle").checked=dark;
 $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e.target.checked);localStorage.setItem("tm-dark",e.target.checked?"1":"0")};
-$("#compactToggle").checked=compact;$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
+const masterCountEl=$("#masterCount");if(masterCountEl)masterCountEl.textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 renderAll();showView("home");initializeSafeStorage();
 
@@ -2024,7 +2028,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.1 UI",
+        version:"8.1.1 UI Fix",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
@@ -2044,5 +2048,18 @@ const saveUserDataNowButton=$("#saveUserDataNowButton");
 if(saveUserDataNowButton){
   saveUserDataNowButton.onclick=()=>{
     if(save())toast("現在の入力データを安全保存しました");
+  };
+}
+
+const reloadStoredImagesButton=$("#reloadStoredImagesButton");
+if(reloadStoredImagesButton){
+  reloadStoredImagesButton.onclick=async()=>{
+    reloadStoredImagesButton.disabled=true;
+    const oldText=reloadStoredImagesButton.textContent;
+    reloadStoredImagesButton.textContent="画像を読み込んでいます…";
+    const count=await hydrateImagesFromDb();
+    reloadStoredImagesButton.disabled=false;
+    reloadStoredImagesButton.textContent=oldText;
+    toast(`${count}件の保存済み画像を確認しました`);
   };
 }

@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.1 UI</title>
+  <title>TsumManager 8.1.1 UI Fix</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.1 UI</p>
+      <p>TsumManager 8.1.1 UI Fix</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -384,6 +384,7 @@
           画像はIndexedDBへ保存します。今後のアプリ更新ではマスターデータだけを更新します。
         </p>
         <button type="button" id="saveUserDataNowButton">現在の入力データを保存</button>
+        <button type="button" id="reloadStoredImagesButton">保存済み画像を再読み込み</button>
       </article>
 <article class="panel settings-panel backup-panel">
         <h2>完全バックアップ</h2>
