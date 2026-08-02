@@ -1270,12 +1270,19 @@ $("#imagePreview").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefau
 ["dragleave","drop"].forEach(type=>$("#imagePreview").addEventListener(type,e=>{e.preventDefault();$("#imagePreview").classList.remove("dragover")}));
 $("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)applySelectedImage(f)});
 
-function normalizeImageFileName(name){
-  return name.replace(/\.[^.]+$/,"").trim()
+function normalizeTsumName(name){
+  return String(name||"").trim()
     .normalize("NFKC")
     .replace(/[・･_\-‐‑‒–—―()（）\[\]【】「」『』'’"“”]/g,"")
     .replace(/\s+/g,"")
     .toLowerCase();
+}
+function normalizeImageFileName(name){
+  // 実在する画像拡張子だけを削除する。
+  // 「ベイマックス2.0」の .0 は名前の一部なので削除しない。
+  const withoutExtension=String(name||"")
+    .replace(/\.(?:jpe?g|png|webp|gif|heic|heif|avif|bmp)$/i,"");
+  return normalizeTsumName(withoutExtension);
 }
 function levenshteinDistance(a,b){
   const dp=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
@@ -1290,7 +1297,7 @@ function levenshteinDistance(a,b){
   return dp[a.length][b.length];
 }
 function candidateScore(fileBase,tsumName){
-  const name=normalizeImageFileName(tsumName);
+  const name=normalizeTsumName(tsumName);
   if(name===fileBase)return 1000;
   const maxLen=Math.max(fileBase.length,name.length,1);
   let score=100-(levenshteinDistance(fileBase,name)/maxLen*100);
@@ -1347,7 +1354,7 @@ $("#bulkImageInput").onchange=async e=>{
       `<br>候補選択待ち：${pendingBulkImages.length}件`;
 
     try{
-      const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
+      const exactCandidates=tsums.filter(x=>normalizeTsumName(x.name)===base);
       const exact=exactCandidates.length===1?exactCandidates[0]:null;
 
       // 完全一致かつ画像登録済みなら、画像自体を読み込まずにスキップ。
@@ -1525,7 +1532,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.3 Stable",
+    version:"8.3.1 Name Match Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1687,7 +1694,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.3 Stable",
+    version:"8.3.1 Name Match Fix",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1795,7 +1802,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3 Stable",
+      version:"8.3.1 Name Match Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2043,7 +2050,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.3 Stable",
+        version:"8.3.1 Name Match Fix",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

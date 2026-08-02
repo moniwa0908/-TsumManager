@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3 Stable",
+  "name": "TsumManager 8.3.1 Name Match Fix",
   "short_name": "ツム管理",
-  "description": "下部メニューから計画機能を削除した安定版",
+  "description": "ベイマックス2.0など小数点を含むツム名の画像一括登録を修正した安定版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
