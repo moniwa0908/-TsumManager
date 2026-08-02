@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.2 Stable</title>
+  <title>TsumManager 8.2.1 Stable</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.2 Stable</p>
+      <p>TsumManager 8.2.1 Stable</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -455,7 +455,8 @@
         <h2>画像の一括登録</h2>
         <p class="helper">画像ファイル名をツム名と同じにしてください。拡張子はjpg・png・webpなどに対応します。<br>例：<code>ミッキー.jpg</code>、<code>エルサ.png</code></p>
         <label class="switch-row"><span>似た名前を候補として表示</span><input id="fuzzyImageMatchToggle" type="checkbox"></label>
-        <p class="helper">完全一致した画像は自動登録します。一致しない場合は、画像未登録ツムから近い名前の候補を表示し、選択して登録できます。</p>
+        <p class="helper">毎回すべての画像を選択しても、画像登録済みのツムは加工・再保存せず自動スキップします。画像を差し替える場合だけ、下のスイッチをオンにしてください。</p>
+        <label class="switch-row"><span>登録済み画像も上書きする</span><input id="overwriteExistingImagesToggle" type="checkbox"></label>
         <label class="file-button">複数画像を選択
           <input id="bulkImageInput" type="file" accept="image/*" multiple>
         </label>

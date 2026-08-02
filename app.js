@@ -1325,18 +1325,47 @@ function renderPendingBulkImages(){
 $("#bulkImageInput").onchange=async e=>{
   const files=[...e.target.files];
   if(!files.length)return;
-  let matched=0,failed=[];
+
+  const overwrite=$("#overwriteExistingImagesToggle")?.checked===true;
+  let registered=0,updated=0,skipped=0,failed=[];
   pendingBulkImages=[];
-  for(const file of files){
+
+  $("#bulkImageResult").innerHTML=`画像を確認しています… 0/${files.length}件`;
+
+  // Safariに最初の進捗表示を反映させる。
+  await new Promise(resolve=>setTimeout(resolve,40));
+
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
     const base=normalizeImageFileName(file.name);
-    const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
-    const exact=exactCandidates.length===1?exactCandidates[0]:null;
+
+    $("#bulkImageResult").innerHTML=
+      `画像を確認しています… ${i+1}/${files.length}件`+
+      `<br>新規登録：${registered}件`+
+      `<br>更新：${updated}件`+
+      `<br><span class="bulk-result-skip">登録済みのためスキップ：${skipped}件</span>`+
+      `<br>候補選択待ち：${pendingBulkImages.length}件`;
+
     try{
+      const exactCandidates=tsums.filter(x=>normalizeImageFileName(x.name)===base);
+      const exact=exactCandidates.length===1?exactCandidates[0]:null;
+
+      // 完全一致かつ画像登録済みなら、画像自体を読み込まずにスキップ。
+      if(exact&&exact.image&&!overwrite){
+        skipped++;
+        await new Promise(resolve=>setTimeout(resolve,0));
+        continue;
+      }
+
+      // 未登録または上書き指定の場合だけ画像を読み込み・圧縮する。
       const image=await compressImageFile(file);
+
       if(exact){
+        const hadImage=!!exact.image;
         exact.image=image;
         await putStoredImage(exact,image);
-        matched++;
+        if(hadImage)updated++;
+        else registered++;
       }else{
         pendingBulkImages.push({
           fileName:file.name,
@@ -1345,12 +1374,26 @@ $("#bulkImageInput").onchange=async e=>{
         });
       }
     }catch(err){
-      failed.push(file.name);
+      failed.push(`${file.name}：${err?.message||String(err)}`);
     }
+
+    // 大量選択時も画面を固めない。
+    await new Promise(resolve=>setTimeout(resolve,0));
   }
-  save();renderAll();renderPendingBulkImages();
-  $("#bulkImageResult").innerHTML=`<span class="bulk-result-good">完全一致で登録：${matched}件</span><br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span><br>読込失敗：${failed.length}件${failed.length?`<br><br>読込失敗：<br>${failed.map(esc).join("<br>")}`:""}`;
-  if(matched)toast(`${matched}体の画像を自動登録しました`);
+
+  save();
+  renderAll();
+  renderPendingBulkImages();
+
+  $("#bulkImageResult").innerHTML=
+    `<span class="bulk-result-good">新規登録：${registered}件</span>`+
+    `<br>更新：${updated}件`+
+    `<br><span class="bulk-result-skip">登録済みのためスキップ：${skipped}件</span>`+
+    `<br><span class="bulk-result-warn">候補選択待ち：${pendingBulkImages.length}件</span>`+
+    `<br>読込失敗：${failed.length}件`+
+    `${failed.length?`<br><br>失敗：<br>${failed.slice(0,20).map(esc).join("<br>")}`:""}`;
+
+  toast(`新規${registered}件・更新${updated}件・スキップ${skipped}件`);
   e.target.value="";
 };
 
@@ -1482,7 +1525,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.2 Stable",
+    version:"8.2.1 Stable",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1644,7 +1687,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.2 Stable",
+    version:"8.2.1 Stable",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1752,7 +1795,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.2 Stable",
+      version:"8.2.1 Stable",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1993,7 +2036,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.2 Stable",
+        version:"8.2.1 Stable",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

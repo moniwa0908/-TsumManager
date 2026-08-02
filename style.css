@@ -586,3 +586,7 @@ dialog{
   font-size:13px;
   line-height:1.5;
 }
+
+.bulk-result-skip{
+  color:var(--muted);
+}
