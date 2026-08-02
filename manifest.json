@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.2.1 Stable",
+  "name": "TsumManager 8.3 Stable",
   "short_name": "ツム管理",
-  "description": "画像一括登録で登録済み画像を自動スキップし、大量選択時の負荷を軽減した安定版",
+  "description": "下部メニューから計画機能を削除した安定版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

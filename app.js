@@ -1525,7 +1525,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.2.1 Stable",
+    version:"8.3 Stable",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1687,7 +1687,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.2.1 Stable",
+    version:"8.3 Stable",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1795,7 +1795,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.2.1 Stable",
+      version:"8.3 Stable",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2018,6 +2018,13 @@ $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e
 const compactToggleEl=$("#compactToggle");if(compactToggleEl)compactToggleEl.checked=compact;const compactToggleHandlerEl=$("#compactToggle");if(compactToggleHandlerEl)compactToggleHandlerEl.onchange=e=>{compact=e.target.checked;gallery=false;localStorage.setItem("tm-compact",compact?"1":"0");localStorage.setItem("tm-gallery","0");if(activeView==="list")renderList()};
 const masterCountEl=$("#masterCount");if(masterCountEl)masterCountEl.textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
+
+// Ver.8.3: 廃止した「計画」画面への遷移はホームへ戻す。
+const originalShowView=showView;
+showView=function(name){
+  return originalShowView(name==="planner"?"home":name);
+};
+
 renderAll();showView("home");renderStableStatus();initializeSafeStorage().then(()=>renderStableStatus("安全保存を確認しました。")).catch(err=>showStartupError(err?.message||String(err)));
 
 
@@ -2036,7 +2043,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.2.1 Stable",
+        version:"8.3 Stable",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

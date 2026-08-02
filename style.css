@@ -590,3 +590,9 @@ dialog{
 .bulk-result-skip{
   color:var(--muted);
 }
+
+
+/* TsumManager 8.3: 計画機能を下部メニューから削除 */
+#plannerView{
+  display:none!important;
+}
