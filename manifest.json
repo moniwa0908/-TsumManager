@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.0.1 Safe Storage",
+  "name": "TsumManager 8.1 UI",
   "short_name": "ツム管理",
-  "description": "マックィーンを正式名称・正確なスキル成長表で追加修正した安全保存版",
+  "description": "設定画面を整理し、文字サイズと画像サイズを分かりやすく変更できる安全保存版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

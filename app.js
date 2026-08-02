@@ -17,6 +17,56 @@ const KEY="tm-user-data-stable-v1",
   IMAGE_STORE_NAME="images";
 const $=q=>document.querySelector(q);
 
+const DISPLAY_SETTINGS_KEY="tm-display-settings-stable-v1";
+
+function loadDisplaySettings(){
+  try{
+    return {
+      textSize:"standard",
+      imageSize:"standard",
+      ...JSON.parse(localStorage.getItem(DISPLAY_SETTINGS_KEY)||"{}")
+    };
+  }catch(e){
+    return {textSize:"standard",imageSize:"standard"};
+  }
+}
+
+let displaySettings=loadDisplaySettings();
+
+function applyDisplaySettings(){
+  document.body.dataset.textSize=displaySettings.textSize;
+  document.body.dataset.imageSize=displaySettings.imageSize;
+
+  const textSelect=$("#textSizeSelect");
+  const imageSelect=$("#imageSizeSelect");
+  if(textSelect)textSelect.value=displaySettings.textSize;
+  if(imageSelect)imageSelect.value=displaySettings.imageSize;
+}
+
+function saveDisplaySettings(){
+  localStorage.setItem(DISPLAY_SETTINGS_KEY,JSON.stringify(displaySettings));
+  applyDisplaySettings();
+}
+
+const textSizeSelect=$("#textSizeSelect");
+if(textSizeSelect){
+  textSizeSelect.onchange=()=>{
+    displaySettings.textSize=textSizeSelect.value;
+    saveDisplaySettings();
+  };
+}
+
+const imageSizeSelect=$("#imageSizeSelect");
+if(imageSizeSelect){
+  imageSizeSelect.onchange=()=>{
+    displaySettings.imageSize=imageSizeSelect.value;
+    saveDisplaySettings();
+  };
+}
+
+applyDisplaySettings();
+
+
 // iPhone Safariの意図しない画面拡大を防止する。
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
@@ -592,6 +642,8 @@ function renderMonthlyReport(){
   el.innerHTML=`<div><b>${ownedDiff>=0?"+":""}${ownedDiff}</b><span>所持ツム増加</span></div><div><b>${maxDiff>=0?"+":""}${maxDiff}</b><span>スキルマ増加</span></div><div><b>${progressDiff>=0?"+":""}${progressDiff}%</b><span>進捗増加</span></div><div><b>${taskDone}</b><span>今日の完了タスク</span></div>`;
 }
 function renderUndoHistory(){
+  const holder=$("#undoHistoryList");
+  if(!holder)return;
   const el=$("#undoHistoryList");if(!el)return;
   el.innerHTML=undoHistory.length?undoHistory.map((u,i)=>`<div class="history-item"><span>${esc(u.description)}</span><span>${new Date(u.time).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span><button data-undo-history-index="${i}">戻す</button></div>`).join(""):`<div class="helper">取り消し履歴はありません。</div>`;
   el.querySelectorAll("[data-undo-history-index]").forEach(b=>b.onclick=()=>applyUndoHistory(Number(b.dataset.undoHistoryIndex)));
@@ -1462,7 +1514,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.0.1 Safe Storage",
+    version:"8.1 UI",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1624,7 +1676,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.0.1 Safe Storage",
+    version:"8.1 UI",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1732,7 +1784,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.0.1 Safe Storage",
+      version:"8.1 UI",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1952,8 +2004,7 @@ $("#runHealthCheckButton").onclick=runHealthCheck;
 
 const dark=localStorage.getItem("tm-dark")==="1";document.documentElement.classList.toggle("dark",dark);$("#darkToggle").checked=dark;
 $("#darkToggle").onchange=e=>{document.documentElement.classList.toggle("dark",e.target.checked);localStorage.setItem("tm-dark",e.target.checked?"1":"0")};
-$("#compactToggle").checked=compact;$("#compactToggle").onchange=e=>{compact=e.target.checked;gallery=false;localStorage.setItem("tm-compact",compact?"1":"0");localStorage.setItem("tm-gallery","0");if(activeView==="list")renderList()};
-$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
+$("#compactToggle").checked=compact;$("#masterCount").textContent=window.TSUM_MASTER_DATA.length+"体";
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 renderAll();showView("home");initializeSafeStorage();
 
@@ -1973,7 +2024,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.0.1 Safe Storage",
+        version:"8.1 UI",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

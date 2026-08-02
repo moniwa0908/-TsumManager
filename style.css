@@ -564,3 +564,119 @@ dialog{
 .safe-storage-panel .result-box{
   line-height:1.7;
 }
+
+
+/* TsumManager 8.1: 分かりやすい表示設定 */
+.display-settings-panel{
+  display:grid;
+  gap:12px;
+}
+
+.display-preview-card{
+  display:grid;
+  grid-template-columns:52px 1fr;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  border-radius:16px;
+  background:var(--bg);
+  border:1px solid var(--line);
+}
+
+.display-preview-avatar{
+  display:grid;
+  place-items:center;
+  width:52px;
+  height:52px;
+  border-radius:14px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  font-size:11px;
+  font-weight:800;
+}
+
+.display-preview-card strong,
+.display-preview-card span{
+  display:block;
+}
+
+.display-preview-card span{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* 文字サイズ */
+body[data-text-size="small"] .tsum-card{
+  font-size:12px;
+}
+body[data-text-size="small"] .tsum-card .meta,
+body[data-text-size="small"] .release-label,
+body[data-text-size="small"] .series-label{
+  font-size:10px;
+}
+
+body[data-text-size="standard"] .tsum-card{
+  font-size:14px;
+}
+
+body[data-text-size="large"] .tsum-card{
+  font-size:16px;
+}
+body[data-text-size="large"] .tsum-card .meta{
+  font-size:13px;
+}
+body[data-text-size="large"] .release-label,
+body[data-text-size="large"] .series-label{
+  font-size:12px;
+}
+
+/* 画像サイズ */
+body[data-image-size="small"] .tsum-card{
+  grid-template-columns:38px minmax(0,1fr) auto;
+}
+body[data-image-size="small"] .avatar{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+}
+
+body[data-image-size="standard"] .tsum-card{
+  grid-template-columns:52px minmax(0,1fr) auto;
+}
+body[data-image-size="standard"] .avatar{
+  width:52px;
+  height:52px;
+}
+
+body[data-image-size="large"] .tsum-card{
+  grid-template-columns:68px minmax(0,1fr) auto;
+}
+body[data-image-size="large"] .avatar{
+  width:68px;
+  height:68px;
+  border-radius:18px;
+}
+
+@media(max-width:430px){
+  body[data-image-size="small"] .tsum-card,
+  body[data-image-size="standard"] .tsum-card,
+  body[data-image-size="large"] .tsum-card{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  body[data-image-size="small"] .avatar{
+    width:38px;
+    height:38px;
+  }
+
+  body[data-image-size="standard"] .avatar{
+    width:46px;
+    height:46px;
+  }
+
+  body[data-image-size="large"] .avatar{
+    width:62px;
+    height:62px;
+  }
+}

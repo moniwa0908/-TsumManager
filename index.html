@@ -11,14 +11,14 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.0.1 Safe Storage</title>
+  <title>TsumManager 8.1 UI</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.0.1 Safe Storage</p>
+      <p>TsumManager 8.1 UI</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -358,17 +358,13 @@
       <article class="panel settings-panel">
         <h2>表示設定</h2>
         <label class="switch-row"><span>ダークモード</span><input id="darkToggle" type="checkbox"></label>
-        <label class="switch-row"><span>一覧をコンパクト表示</span><input id="compactToggle" type="checkbox"></label>
+        
       </article>
 
 
 
 
-      <article class="panel settings-panel">
-        <h2>操作取り消し履歴</h2>
-        <div id="undoHistoryList" class="history-list"></div>
-        <button id="clearUndoHistoryButton" class="danger-button">取り消し履歴を削除</button>
-      </article>
+      
 
       <article class="panel settings-panel">
         <h2>進捗記録管理</h2>
@@ -389,15 +385,7 @@
         </p>
         <button type="button" id="saveUserDataNowButton">現在の入力データを保存</button>
       </article>
-
-      <article class="panel settings-panel rescue-panel">
-        <h2>データ復旧モード</h2>
-        <p class="helper">過去の保存領域を比較し、画像・所持数などの入力が最も多いデータを自動で読み込みます。Safariの履歴やWebサイトデータは消去しないでください。</p>
-        <div id="rescueStatus" class="result-box">復旧データを確認しています。</div>
-        <button type="button" id="rescueBackupButton" class="primary-button">復旧したデータをバックアップ</button>
-      </article>
-
-      <article class="panel settings-panel backup-panel">
+<article class="panel settings-panel backup-panel">
         <h2>完全バックアップ</h2>
         <p class="helper">所持数・画像・お気に入り・メモ・タグ・評価・目標・履歴などを、1つのJSONファイルに保存します。</p>
         <div id="backupSummary" class="backup-summary"></div>
@@ -411,6 +399,15 @@
         <p class="backup-ios-guide">iPhoneでは共有画面が開きます。「ファイルに保存」→「iCloud Drive」などを選んでください。</p>
         <div id="backupStatus" class="result-box">まだバックアップは作成されていません。</div>
       </article>
+
+      <article class="panel settings-panel rescue-panel">
+        <h2>データ復旧モード</h2>
+        <p class="helper">過去の保存領域を比較し、画像・所持数などの入力が最も多いデータを自動で読み込みます。Safariの履歴やWebサイトデータは消去しないでください。</p>
+        <div id="rescueStatus" class="result-box">復旧データを確認しています。</div>
+        <button type="button" id="rescueBackupButton" class="primary-button">復旧したデータをバックアップ</button>
+      </article>
+
+      
 
       <article class="panel settings-panel">
         <h2>CSVデータ</h2>
@@ -486,7 +483,37 @@
           <div><dt>データ引継ぎ</dt><dd>Ver.1〜5.1対応</dd></div>
         </dl>
       </article>
-    </section>
+    
+      <article class="panel settings-panel display-settings-panel">
+        <h2>表示設定</h2>
+        <p class="helper">変更内容が一覧にすぐ反映されます。</p>
+
+        <label>文字サイズ
+          <select id="textSizeSelect">
+            <option value="small">小さめ</option>
+            <option value="standard">標準</option>
+            <option value="large">大きめ</option>
+          </select>
+        </label>
+
+        <label>ツム画像サイズ
+          <select id="imageSizeSelect">
+            <option value="small">小さめ</option>
+            <option value="standard">標準</option>
+            <option value="large">大きめ</option>
+          </select>
+        </label>
+
+        <div class="display-preview-card">
+          <div class="display-preview-avatar">画像</div>
+          <div>
+            <strong>マックィーン</strong>
+            <span>スキル 3/6　25%</span>
+          </div>
+        </div>
+      </article>
+
+</section>
   </main>
 
   <nav class="bottom-nav">
