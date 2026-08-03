@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.1 Default ID Sort Edition",
+  "name": "TsumManager 8.4.2 Lovely Stitch & Angel Rename Edition",
   "short_name": "TsumManager",
-  "description": "ツム管理一覧をID昇順で初期表示するコレクションID対応版",
+  "description": "ID順表示と名称移行に対応したコレクションID版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

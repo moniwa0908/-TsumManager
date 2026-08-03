@@ -273,7 +273,13 @@ async function hydrateImagesFromDb(){
     const byId=new Map(images.map(x=>[x.id,x.image]));
     const byName=new Map(images.map(x=>[x.name,x.image]));
     for(const t of tsums){
-      const image=byId.get(t.id)||byName.get(t.name);
+      let image=byId.get(t.id)||byName.get(t.name);
+      if(!image&&Array.isArray(t.aliases)){
+        for(const alias of t.aliases){
+          image=byName.get(alias);
+          if(image)break;
+        }
+      }
       if(image)t.image=image;
     }
     renderAll();
@@ -1451,7 +1457,7 @@ $("#importMasterCsvInput").onchange=e=>{
       for(const row of rows.slice(1)){
         const name=row[pos("name")]?.trim();if(!name)continue;
         const csvId=pos("id")>=0?(row[pos("id")]||"").trim():"";
-        const t=(csvId?tsums.find(x=>x.id===migrateTsumId(csvId)):null)||tsums.find(x=>x.name===name);
+        const t=(csvId?tsums.find(x=>x.id===migrateTsumId(csvId)):null)||tsums.find(x=>x.name===name||(Array.isArray(x.aliases)&&x.aliases.includes(name)));
         if(!t){missing.push(name||csvId);continue}
         if(pos("releaseDate")>=0){
           const value=(row[pos("releaseDate")]||"").trim();

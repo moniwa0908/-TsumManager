@@ -1,4 +1,4 @@
-# TsumManager 8.4.1 Default ID Sort Edition
+# TsumManager 8.4.2 Lovely Stitch & Angel Rename Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -22,3 +22,9 @@
 - ツム管理一覧のデフォルト表示をID昇順に変更
 - 並び替えメニューに「ID順」を追加
 - マスターデータCSVをID昇順で出力
+
+
+## 8.4.2 changes
+- 「スティッチ＆エンジェル」を「ラブリースティッチ＆エンジェル」に変更
+- ID 535・旧IDは維持
+- 旧名称（半角/全角＆）から保存データ、画像、CSVを自動引継ぎ
