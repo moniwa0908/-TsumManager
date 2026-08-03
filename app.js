@@ -1288,7 +1288,7 @@ $("#imagePreview").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];i
 function normalizeTsumName(name){
   return String(name||"").trim()
     .normalize("NFKC")
-    .replace(/[・･_\-‐‑‒–—―()（）\[\]【】「」『』'’"“”]/g,"")
+    .replace(/[・･_\-‐‑‒–—―()（）\[\]【】「」『』<>〈〉＜＞'’"“”]/g,"")
     .replace(/\s+/g,"")
     .toLowerCase();
 }
@@ -1547,7 +1547,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.3.6 Name Fix",
+    version:"8.3.7 Charm Bracket Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1709,7 +1709,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.3.6 Name Fix",
+    version:"8.3.7 Charm Bracket Fix",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1817,7 +1817,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3.6 Name Fix",
+      version:"8.3.7 Charm Bracket Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2065,7 +2065,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.3.6 Name Fix",
+        version:"8.3.7 Charm Bracket Fix",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
