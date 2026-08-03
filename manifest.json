@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3.4 Hamster Fix",
+  "name": "TsumManager 8.3.5 MAX & Sally Fix",
   "short_name": "TsumManager",
-  "description": "Dr.ハムスターヴィールをハムスターヴィール博士へ変更した版",
+  "description": "一覧にMAXボタンを追加し、サリー（ナイトメア）のスキル成長数を修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

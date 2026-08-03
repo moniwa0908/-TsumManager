@@ -596,3 +596,24 @@ dialog{
 #plannerView{
   display:none!important;
 }
+
+
+/* Ver.8.3.5: 一覧のMAX入力ボタン */
+.counter .max-button{
+  min-width:44px;
+  padding:0 8px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.02em;
+  border-radius:10px;
+}
+.counter .max-button:active{
+  transform:scale(.96);
+}
+@media(max-width:430px){
+  .counter .max-button{
+    min-width:40px;
+    padding:0 6px;
+    font-size:10px;
+  }
+}

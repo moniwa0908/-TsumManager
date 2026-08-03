@@ -403,7 +403,16 @@ function touchRecent(id){
 const remain=t=>Math.max(0,t.required-t.owned);
 const pct=t=>Math.min(100,Math.round(t.owned/t.required*100));
 function growthProfile(t){
-  if(Array.isArray(t.skillGrowth)&&t.skillGrowth.length)return t.skillGrowth;
+  const registeredGrowth=Array.isArray(t.skillGrowth)
+    ?t.skillGrowth.map(x=>Math.max(0,Number(x)||0))
+    :[];
+  const registeredTotal=1+registeredGrowth.reduce((sum,x)=>sum+x,0);
+
+  // スキルマ32体・36体のツムは、登録済みの各スキル必要数を最優先する。
+  // それ以外のツムも、合計がスキルマ必要数と一致するskillGrowthがあれば使用する。
+  if(registeredGrowth.length&&registeredTotal===Number(t.required||1)){
+    return registeredGrowth;
+  }
   const remaining=Math.max(0,Number(t.required||1)-1);
   if(remaining===0)return[];
   const parts=Number(t.required)>=6?5:Math.max(1,Number(t.required)-1);
@@ -495,9 +504,10 @@ function cardHtml(t){
       <div class="mini-progress"><i style="width:${pct(t)}%"></i></div>
     </div>
     <div class="counter">
-      <button data-action="minus" data-id="${t.id}">−</button>
+      <button data-action="minus" data-id="${t.id}" aria-label="${esc(t.name)}を1体減らす">−</button>
       <b class="${remain(t)===0?"maxed":""}">${t.owned}/${t.required}</b>
-      <button class="plus" data-action="plus" data-id="${t.id}">＋</button>
+      <button class="plus" data-action="plus" data-id="${t.id}" aria-label="${esc(t.name)}を1体増やす">＋</button>
+      <button class="max-button" data-action="max" data-id="${t.id}" aria-label="${esc(t.name)}をスキルMAXにする">MAX</button>
     </div>
   </article>`;
 }
@@ -513,6 +523,11 @@ function handleCardAction(action,id){
   if(action==="minus"){
     const before=t.owned;t.owned=Math.max(0,t.owned-increment);
     if(t.owned!==before)setUndo(`${t.name}の所持数変更を取り消す`,[{id:t.id,owned:before}]);
+  }
+  if(action==="max"){
+    const before=t.owned;
+    t.owned=t.required;
+    if(t.owned!==before)setUndo(`${t.name}のMAX入力を取り消す`,[{id:t.id,owned:before}]);
   }
   if(action==="favorite"){
     const before=t.favorite;t.favorite=!t.favorite;
@@ -1532,7 +1547,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.3.4 Hamster Fix",
+    version:"8.3.5 MAX & Sally Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1694,7 +1709,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.3.4 Hamster Fix",
+    version:"8.3.5 MAX & Sally Fix",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1802,7 +1817,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3.4 Hamster Fix",
+      version:"8.3.5 MAX & Sally Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2050,7 +2065,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.3.4 Hamster Fix",
+        version:"8.3.5 MAX & Sally Fix",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
