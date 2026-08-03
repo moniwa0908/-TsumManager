@@ -1,4 +1,4 @@
-# TsumManager 8.3.8 Stable Rebuilt
+# TsumManager 8.4.0 Collection ID Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -9,3 +9,10 @@
 ## 注意
 アップロードされたapp(2).jsは8.3 Stableの古い内容だったため、
 機能を巻き戻さないよう8.3.7の完全版を基準に再構築しています。
+
+
+## 8.4.0 changes
+- IDs are sequential collection IDs starting with Mickey = 1.
+- Legacy IDs are retained and automatically migrated by ID/name.
+- CSV export/import includes id and legacyId columns.
+- Collection order source: https://xn--bdka7fb.jp/17472.html (checked 2026-08-03).

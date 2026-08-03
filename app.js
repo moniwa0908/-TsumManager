@@ -16,6 +16,7 @@ const KEY="tm-user-data-stable-v1",
   IMAGE_DB_VERSION=1,
   IMAGE_STORE_NAME="images";
 const $=q=>document.querySelector(q);
+const migrateTsumId=id=>String(window.TSUM_LEGACY_ID_MAP?.[String(id)]||id||"");
 
 function showStartupError(message){
   const banner=document.querySelector("#startupErrorBanner");
@@ -52,7 +53,7 @@ stabilizeMobileViewport();
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const norm=t=>({
-  id:t.id||crypto.randomUUID(),name:String(t.name||"名称未設定"),category:String(t.category||"未分類"),
+  id:String(t.id||crypto.randomUUID()),legacyId:String(t.legacyId||""),collectionOrder:Number(t.collectionOrder||t.releaseOrder||0),name:String(t.name||"名称未設定"),category:String(t.category||"未分類"),
   required:Math.max(1,Number(t.required||t.maxCopies||36)),owned:Math.max(0,Number(t.owned||0)),
   releaseYear:Number(t.releaseYear||t.year||0),releaseDate:String(t.releaseDate||""),releaseOrder:Number(t.releaseOrder||0),series:String(t.series||""),favorite:!!t.favorite,image:String(t.image||""),
   memo:String(t.memo||t.note||""),priority:Number(t.priority||0),
@@ -132,7 +133,7 @@ function applyUserRecord(base,record){
 }
 function mergeUserStore(store){
   const records=Array.isArray(store?.records)?store.records:[];
-  const byId=new Map(records.filter(r=>r.id).map(r=>[r.id,r]));
+  const byId=new Map(records.filter(r=>r.id).flatMap(r=>[[String(r.id),r],[migrateTsumId(r.id),r]]));
   const byName=new Map(records.filter(r=>r.name).map(r=>[r.name,r]));
   const result=master().map(m=>{
     let record=byId.get(m.id)||byName.get(m.name);
@@ -349,7 +350,7 @@ let snapshots=readJsonWithLegacy(SNAPSHOT_KEY,["tsumManagerSnapshotsV633","tsumM
 let dailyTasks=readJsonWithLegacy(TASK_KEY,["tsumManagerTasksV633","tsumManagerTasksV632"],[]);
 let undoHistory=readJsonWithLegacy(UNDO_HISTORY_KEY,["tsumManagerUndoHistoryV633","tsumManagerUndoHistoryV632"],[]);
 let viewerIndex=0,pendingBulkImages=[];
-let todayTrainingId=localStorage.getItem(TODAY_KEY)||localStorage.getItem("tsumManagerTodayV633")||"";
+let todayTrainingId=migrateTsumId(localStorage.getItem(TODAY_KEY)||localStorage.getItem("tsumManagerTodayV633")||"");
 let undoState=readJsonWithLegacy(UNDO_KEY,["tsumManagerUndoV633","tsumManagerUndoV632"],null);
 let activeView="home",category="すべて",status="all",activeTag="すべて",releaseYearFilter="all",releaseMonthFilter="all",seriesFilter="all",collectionCategory="すべて",collectionLimit=60,rankingType="coin",rankingOwnedOnly=true,missingMode="release",increment=1;
 let compact=localStorage.getItem("tm-compact")==="1",gallery=localStorage.getItem("tm-gallery")==="1",editingImage="",ticketSelection="",detailId="";
@@ -1425,8 +1426,8 @@ function masterDataCsvEscape(value){
   return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
 }
 $("#exportMasterCsvButton").onclick=()=>{
-  const rows=tsums.map(t=>[t.name,t.releaseDate,t.series,t.releaseOrder].map(masterDataCsvEscape).join(","));
-  const csv="\uFEFF"+["name,releaseDate,series,releaseOrder",...rows].join("\r\n");
+  const rows=tsums.map(t=>[t.id,t.name,t.releaseDate,t.series,t.releaseOrder,t.legacyId].map(masterDataCsvEscape).join(","));
+  const csv="\uFEFF"+["id,name,releaseDate,series,releaseOrder,legacyId",...rows].join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
@@ -1446,8 +1447,9 @@ $("#importMasterCsvInput").onchange=e=>{
       let updated=0,missing=[];
       for(const row of rows.slice(1)){
         const name=row[pos("name")]?.trim();if(!name)continue;
-        const t=tsums.find(x=>x.name===name);
-        if(!t){missing.push(name);continue}
+        const csvId=pos("id")>=0?(row[pos("id")]||"").trim():"";
+        const t=(csvId?tsums.find(x=>x.id===migrateTsumId(csvId)):null)||tsums.find(x=>x.name===name);
+        if(!t){missing.push(name||csvId);continue}
         if(pos("releaseDate")>=0){
           const value=(row[pos("releaseDate")]||"").trim();
           if(!value||/^\d{4}-\d{2}$/.test(value)){
