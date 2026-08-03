@@ -172,9 +172,6 @@ dialog{border:0;border-radius:22px;background:var(--card);color:var(--text);widt
 .today-training-card strong{display:block;font-size:17px}
 .today-training-card small{display:block;color:var(--muted);margin-top:4px}
 .today-training-card button{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:9px 12px;font-weight:800}
-.undo-panel{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.undo-panel h2{margin:0 0 4px}
-.undo-panel p{margin:0}
 .history-item button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:5px 8px;font-size:11px}
 .plan-progress{height:7px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:9px}
 .plan-progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
