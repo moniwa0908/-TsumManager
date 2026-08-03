@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3.8 CSV Input Fix",
+  "name": "TsumManager 8.3.8 Stable UI Cleanup",
   "short_name": "TsumManager",
-  "description": "ID優先の入力用CSVに対応し、操作取り消し表示を削除した版",
+  "description": "操作取り消し表示を削除し、既存CSV機能を維持した安定版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
