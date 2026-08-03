@@ -1244,7 +1244,7 @@ $("#changeTodayTrainingButton").onclick=()=>{renderTodayTrainingCandidates();$("
 $("#todayTrainingSearch").oninput=renderTodayTrainingCandidates;
 $("#closeTodayTrainingButton").onclick=()=>$("#todayTrainingDialog").close();
 $("#clearTodayTrainingButton").onclick=()=>{todayTrainingId="";saveToday();renderHome();$("#todayTrainingDialog").close();toast("設定を解除しました")};
-$("#undoButton").onclick=()=>{
+setOptionalHandler("#undoButton","onclick",()=>{
   if(!undoState||!Array.isArray(undoState.changes))return;
   for(const c of undoState.changes){
     const t=tsums.find(x=>x.id===c.id);if(!t)continue;
@@ -1252,7 +1252,7 @@ $("#undoButton").onclick=()=>{
     if(typeof c.favorite==="boolean")t.favorite=c.favorite;
   }
   undoState=null;saveUndo();save();renderAll();toast("操作を取り消しました");
-};
+});
 $("#restoreLastHistoryButton").onclick=()=>{if(history.length&&history[0].changes)restoreHistory(0);else toast("戻せる履歴がありません")};
 
 $("#collectionSearch").oninput=()=>{collectionLimit=60;renderCollection()};
@@ -1547,7 +1547,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.3.7 Charm Bracket Fix",
+    version:"8.3.8 CSV Input Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1709,7 +1709,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.3.7 Charm Bracket Fix",
+    version:"8.3.8 CSV Input Fix",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1817,7 +1817,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3.7 Charm Bracket Fix",
+      version:"8.3.8 CSV Input Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1955,63 +1955,45 @@ $("#importFullBackupInput").onchange=e=>{
 };
 
 $("#exportCsvButton").onclick=()=>{
-  const header=["name","category","owned","required","favorite","priority","tags","coinRating","scoreRating","easeRating","missionTags","memo"];
-  const rows=tsums.map(t=>[
-    t.name,t.category,t.owned,t.required,t.favorite?1:0,t.priority,(t.tags||[]).join("|"),t.coinRating,t.scoreRating,t.easeRating,(t.missionTags||[]).join("|"),t.memo
-  ].map(csvEscape).join(","));
+  const header=["id","name","category","owned","skillLevel","skillPercent","required","favorite","priority","tags","coinRating","scoreRating","easeRating","missionTags","memo"];
+  const rows=tsums.map(t=>{const s=skillState(t);return [t.id,t.name,t.category,t.owned,s.level,s.percent,t.required,t.favorite?1:0,t.priority,(t.tags||[]).join("|"),t.coinRating,t.scoreRating,t.easeRating,(t.missionTags||[]).join("|"),t.memo].map(csvEscape).join(",")});
   const csv="\uFEFF"+[header.join(","),...rows].join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`TsumManager_Input_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
 };
 function parseCsv(text){
   const rows=[];let row=[],field="",quoted=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i],next=text[i+1];
-    if(c==='"'&&quoted&&next==='"'){field+='"';i++;continue}
-    if(c==='"'){quoted=!quoted;continue}
-    if(c===","&&!quoted){row.push(field);field="";continue}
-    if((c==="\n"||c==="\r")&&!quoted){
-      if(c==="\r"&&next==="\n")i++;
-      row.push(field);if(row.some(x=>x!==""))rows.push(row);row=[];field="";continue
-    }
-    field+=c;
-  }
-  row.push(field);if(row.some(x=>x!==""))rows.push(row);
-  return rows;
+  for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(c==='"'&&quoted&&next==='"'){field+='"';i++;continue}if(c==='"'){quoted=!quoted;continue}if(c===","&&!quoted){row.push(field);field="";continue}if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&next==="\n")i++;row.push(field);if(row.some(x=>x!==""))rows.push(row);row=[];field="";continue}field+=c}
+  row.push(field);if(row.some(x=>x!==""))rows.push(row);return rows;
 }
+function csvBoolean(value,current=false){const text=String(value??"").trim().toLowerCase();if(["1","true","yes","on","はい"].includes(text))return true;if(["0","false","no","off","いいえ"].includes(text))return false;return current}
 $("#importCsvInput").onchange=e=>{
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const rows=parseCsv(String(reader.result).replace(/^\uFEFF/,""));
-      if(rows.length<2)throw new Error("データがありません");
-      const header=rows[0].map(x=>x.trim());
-      const indexOf=name=>header.indexOf(name);
-      let updated=0,missing=[];
-      for(const row of rows.slice(1)){
-        const name=row[indexOf("name")]?.trim();if(!name)continue;
-        const t=tsums.find(x=>x.name===name);if(!t){missing.push(name);continue}
-        const owned=Number(row[indexOf("owned")]),required=Number(row[indexOf("required")]);
-        if(Number.isFinite(required)&&required>0)t.required=required;
-        if(Number.isFinite(owned))t.owned=Math.max(0,Math.min(t.required,owned));
-        if(indexOf("category")>=0&&row[indexOf("category")])t.category=row[indexOf("category")];
-        if(indexOf("favorite")>=0)t.favorite=["1","true","TRUE"].includes(row[indexOf("favorite")]);
-        if(indexOf("priority")>=0)t.priority=Number(row[indexOf("priority")])||0;
-        if(indexOf("tags")>=0)t.tags=(row[indexOf("tags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
-        if(indexOf("coinRating")>=0)t.coinRating=Math.max(0,Math.min(5,Number(row[indexOf("coinRating")])||0));
-        if(indexOf("scoreRating")>=0)t.scoreRating=Math.max(0,Math.min(5,Number(row[indexOf("scoreRating")])||0));
-        if(indexOf("easeRating")>=0)t.easeRating=Math.max(0,Math.min(5,Number(row[indexOf("easeRating")])||0));
-        if(indexOf("missionTags")>=0)t.missionTags=(row[indexOf("missionTags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
-        if(indexOf("memo")>=0)t.memo=row[indexOf("memo")]||"";
-        updated++;
-      }
-      save();renderAll();
-      if(missing.length)openMessage("CSV読込結果",`更新：${updated}体\n未登録：${missing.slice(0,20).join("、")}${missing.length>20?" ほか":""}`);
-      else toast(`${updated}体をCSVから更新しました`);
-    }catch(err){alert("CSVを読み込めませんでした："+err.message)}
-  };
-  reader.readAsText(file);
+  const file=e.target.files[0];if(!file)return;const reader=new FileReader();
+  reader.onload=()=>{try{
+    const rows=parseCsv(String(reader.result).replace(/^\uFEFF/,""));if(rows.length<2)throw new Error("データがありません");
+    const header=rows[0].map(x=>x.trim()),pos=name=>header.indexOf(name);if(pos("id")<0&&pos("name")<0)throw new Error("id列またはname列が必要です");
+    let updated=0;const missing=[],duplicate=[],invalid=[];
+    for(let rowNo=1;rowNo<rows.length;rowNo++){
+      const row=rows[rowNo],id=pos("id")>=0?(row[pos("id")]||"").trim():"",name=pos("name")>=0?(row[pos("name")]||"").trim():"";
+      let candidates=[];if(id)candidates=tsums.filter(x=>x.id===id);if(!candidates.length&&name)candidates=tsums.filter(x=>x.name===name);
+      if(candidates.length>1){duplicate.push(name||id||`行${rowNo+1}`);continue}const t=candidates[0];if(!t){missing.push(name||id||`行${rowNo+1}`);continue}
+      try{
+        const hasLevel=pos("skillLevel")>=0&&String(row[pos("skillLevel")]??"").trim()!=="",hasPercent=pos("skillPercent")>=0&&String(row[pos("skillPercent")]??"").trim()!=="";
+        if(hasLevel||hasPercent){const current=skillState(t),level=hasLevel?Number(row[pos("skillLevel")]):current.level,percent=hasPercent?Number(row[pos("skillPercent")]):0;if(!Number.isFinite(level)||!Number.isFinite(percent))throw new Error("スキルレベルまたはパーセントが数値ではありません");t.owned=skillOwnedFromDisplay(t,level,percent)}
+        else if(pos("owned")>=0&&String(row[pos("owned")]??"").trim()!==""){const owned=Number(row[pos("owned")]);if(!Number.isFinite(owned))throw new Error("ownedが数値ではありません");t.owned=Math.max(0,Math.min(t.required,Math.round(owned)))}
+        if(pos("favorite")>=0&&String(row[pos("favorite")]??"").trim()!=="")t.favorite=csvBoolean(row[pos("favorite")],t.favorite);
+        if(pos("priority")>=0&&String(row[pos("priority")]??"").trim()!=="")t.priority=Math.max(0,Math.min(3,Number(row[pos("priority")])||0));
+        if(pos("tags")>=0)t.tags=(row[pos("tags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
+        if(pos("coinRating")>=0&&String(row[pos("coinRating")]??"").trim()!=="")t.coinRating=Math.max(0,Math.min(5,Number(row[pos("coinRating")])||0));
+        if(pos("scoreRating")>=0&&String(row[pos("scoreRating")]??"").trim()!=="")t.scoreRating=Math.max(0,Math.min(5,Number(row[pos("scoreRating")])||0));
+        if(pos("easeRating")>=0&&String(row[pos("easeRating")]??"").trim()!=="")t.easeRating=Math.max(0,Math.min(5,Number(row[pos("easeRating")])||0));
+        if(pos("missionTags")>=0)t.missionTags=(row[pos("missionTags")]||"").split("|").map(x=>x.trim()).filter(Boolean);
+        if(pos("memo")>=0)t.memo=row[pos("memo")]||"";updated++;
+      }catch(err){invalid.push(`${name||id||`行${rowNo+1}`}：${err.message}`)}
+    }
+    save();renderAll();renderSettings();const lines=[`更新：${updated}体`];if(missing.length)lines.push(`未登録：${missing.length}件`);if(duplicate.length)lines.push(`重複：${duplicate.length}件`);if(invalid.length)lines.push(`入力エラー：${invalid.length}件`);
+    if(missing.length||duplicate.length||invalid.length){const detail=[missing.length?`\n未登録：\n${missing.slice(0,20).join("、")}`:"",duplicate.length?`\n重複：\n${duplicate.slice(0,20).join("、")}`:"",invalid.length?`\n入力エラー：\n${invalid.slice(0,20).join("\n")}`:""].join("");openMessage("入力用CSV読込結果",lines.join("\n")+detail)}else toast(`${updated}体をCSVから更新しました`)
+  }catch(err){alert("CSVを読み込めませんでした："+err.message)}finally{e.target.value=""}};reader.readAsText(file)
 };
 
 function runHealthCheck(){
@@ -2065,7 +2047,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.3.7 Charm Bracket Fix",
+        version:"8.3.8 CSV Input Fix",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

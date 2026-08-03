@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.3.7 Charm Bracket Fix",
+  "name": "TsumManager 8.3.8 CSV Input Fix",
   "short_name": "TsumManager",
-  "description": "チャーム表記の括弧を統一し、各種括弧を同一扱いで画像照合する版",
+  "description": "ID優先の入力用CSVに対応し、操作取り消し表示を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

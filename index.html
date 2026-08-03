@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.3.7 Charm Bracket Fix</title>
+  <title>TsumManager 8.3.8 CSV Input Fix</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.3.7 Charm Bracket Fix</p>
+      <p>TsumManager 8.3.8 CSV Input Fix</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -92,14 +92,6 @@
       <article class="panel">
         <div class="section-title"><h2>今日の育成</h2><button id="changeTodayTrainingButton">変更</button></div>
         <div id="todayTrainingCard" class="today-training-card"></div>
-      </article>
-
-      <article class="panel undo-panel">
-        <div>
-          <h2>直前の操作</h2>
-          <p id="undoDescription" class="helper">取り消せる操作はありません。</p>
-        </div>
-        <button id="undoButton" class="secondary-button" disabled>取り消す</button>
       </article>
 
       <article class="panel">
@@ -362,15 +354,6 @@
         <label class="switch-row"><span>一覧をコンパクト表示</span><input id="compactToggle" type="checkbox"></label>
       </article>
 
-
-
-
-      <article class="panel settings-panel">
-        <h2>操作取り消し履歴</h2>
-        <div id="undoHistoryList" class="history-list"></div>
-        <button id="clearUndoHistoryButton" class="danger-button">取り消し履歴を削除</button>
-      </article>
-
       <article class="panel settings-panel">
         <h2>進捗記録管理</h2>
         <p class="helper">記録はバックアップにも含まれます。</p>
@@ -422,10 +405,11 @@
       </article>
 
       <article class="panel settings-panel">
-        <h2>CSVデータ</h2>
-        <p class="helper">Excelなどで所持数を編集できます。画像はCSVには含まれません。</p>
-        <button id="exportCsvButton">CSVを書き出す</button>
-        <label class="file-button">CSVを読み込む<input id="importCsvInput" type="file" accept=".csv,text/csv"></label>
+        <h2>ツム入力用CSV</h2>
+        <p class="helper">Excelやスプレッドシートで所持数・スキル進捗・お気に入り・メモなどをまとめて編集できます。<br>読込時はIDを最優先するため、ツム名が変更されても安全です。画像はCSVには含まれません。</p>
+        <button id="exportCsvButton">入力用CSVを書き出す</button>
+        <label class="file-button">入力用CSVを読み込む<input id="importCsvInput" type="file" accept=".csv,text/csv"></label>
+        <p class="helper">所持数を直接入力する場合は「owned」を編集してください。「skillLevel」と「skillPercent」を入力した場合は、そちらから所持数を計算します。</p>
       </article>
 
       <article class="panel settings-panel">
