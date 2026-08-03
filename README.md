@@ -1,4 +1,4 @@
-# TsumManager 8.4.0 Collection ID Edition
+# TsumManager 8.4.1 Default ID Sort Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -16,3 +16,9 @@
 - Legacy IDs are retained and automatically migrated by ID/name.
 - CSV export/import includes id and legacyId columns.
 - Collection order source: https://xn--bdka7fb.jp/17472.html (checked 2026-08-03).
+
+
+## 8.4.1 changes
+- ツム管理一覧のデフォルト表示をID昇順に変更
+- 並び替えメニューに「ID順」を追加
+- マスターデータCSVをID昇順で出力

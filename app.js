@@ -879,6 +879,7 @@ function renderList(){
     return (category==="すべて"||t.category===category)&&(activeTag==="すべて"||t.tags.includes(activeTag))&&releaseMatch&&seriesMatch&&matchStatus&&(t.name.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q)||t.tags.some(tag=>tag.toLowerCase().includes(q)));
   });
   rows.sort((a,b)=>{
+    if(sort==="id")return (Number(a.id)||Number(a.collectionOrder)||0)-(Number(b.id)||Number(b.collectionOrder)||0)||a.name.localeCompare(b.name,"ja");
     if(sort==="remain")return remain(a)-remain(b)||a.name.localeCompare(b.name,"ja");
     if(sort==="progress")return pct(b)-pct(a)||a.name.localeCompare(b.name,"ja");
     if(sort==="owned")return b.owned-a.owned||a.name.localeCompare(b.name,"ja");
@@ -1426,7 +1427,9 @@ function masterDataCsvEscape(value){
   return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;
 }
 $("#exportMasterCsvButton").onclick=()=>{
-  const rows=tsums.map(t=>[t.id,t.name,t.releaseDate,t.series,t.releaseOrder,t.legacyId].map(masterDataCsvEscape).join(","));
+  const rows=[...tsums]
+    .sort((a,b)=>(Number(a.id)||Number(a.collectionOrder)||0)-(Number(b.id)||Number(b.collectionOrder)||0)||a.name.localeCompare(b.name,"ja"))
+    .map(t=>[t.id,t.name,t.releaseDate,t.series,t.releaseOrder,t.legacyId].map(masterDataCsvEscape).join(","));
   const csv="\uFEFF"+["id,name,releaseDate,series,releaseOrder,legacyId",...rows].join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");

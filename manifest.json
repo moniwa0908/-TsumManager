@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.0 Collection ID Edition",
+  "name": "TsumManager 8.4.1 Default ID Sort Edition",
   "short_name": "TsumManager",
-  "description": "操作取り消し表示を安全に削除し、8.3.7の機能を維持した安定版",
+  "description": "ツム管理一覧をID昇順で初期表示するコレクションID対応版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
