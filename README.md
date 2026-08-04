@@ -1,4 +1,4 @@
-# TsumManager 8.4.2 Lovely Stitch & Angel Rename Edition
+# TsumManager 8.4.3 Lovely Stitch & Angel Rename Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -24,7 +24,7 @@
 - マスターデータCSVをID昇順で出力
 
 
-## 8.4.2 changes
+## 8.4.3 changes
 - 「スティッチ＆エンジェル」を「ラブリースティッチ＆エンジェル」に変更
 - ID 535・旧IDは維持
 - 旧名称（半角/全角＆）から保存データ、画像、CSVを自動引継ぎ
