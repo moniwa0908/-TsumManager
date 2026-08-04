@@ -1,4 +1,11 @@
-# TsumManager 8.4.5 Buzz Plus Name Update Edition
+# TsumManager 8.5.0 Fast List Edition
+
+## 8.5.0 changes
+- 一覧画面を先に表示してから描画するよう変更
+- 最初は20体のみ描画し、スクロールに応じて20体ずつ追加
+- 756体分のカード・画像を一括生成しないため、一覧ボタンの反応を高速化
+- IntersectionObserver非対応時も「さらに表示」ボタンで継続表示可能
+
 
 ## 修正内容
 - ホームの「直前の操作」を削除

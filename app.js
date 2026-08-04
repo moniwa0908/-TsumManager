@@ -475,21 +475,32 @@ function toast(message){
   setTimeout(()=>el.classList.remove("show"),1700);
 }
 function openMessage(title,body){$("#messageTitle").textContent=title;$("#messageBody").textContent=body;$("#messageDialog").showModal()}
+let listRenderRequest=0;
 function showView(view){
   activeView=view;
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.id!==view+"View");
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-  if(view==="home")renderHome();
-  if(view==="collection")renderCollection();
-  if(view==="list")renderList();
-  if(view==="box")renderBox();
-  if(view==="training")renderTraining();
-  if(view==="stats")renderStats();
-  if(view==="strategy")renderStrategy();
-  if(view==="goals")renderGoals();
-  if(view==="planner")renderPlanner();
-  if(view==="settings")renderSettings();
-  scrollTo({top:0,behavior:"smooth"});
+  if(view==="list"){
+    // 先に画面切替を描画し、その次のフレームで一覧を作る。
+    const requestId=++listRenderRequest;
+    const list=$("#tsumList");
+    if(list)list.innerHTML='<article class="panel helper list-loading">一覧を準備しています…</article>';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(activeView==="list"&&requestId===listRenderRequest)renderList();
+    }));
+  }else{
+    listRenderRequest++;
+    if(view==="home")renderHome();
+    if(view==="collection")renderCollection();
+    if(view==="box")renderBox();
+    if(view==="training")renderTraining();
+    if(view==="stats")renderStats();
+    if(view==="strategy")renderStrategy();
+    if(view==="goals")renderGoals();
+    if(view==="planner")renderPlanner();
+    if(view==="settings")renderSettings();
+  }
+  scrollTo({top:0,behavior:"auto"});
 }
 function avatarHtml(t){return t.image?`<img src="${esc(t.image)}" alt="">`:esc(t.name.slice(0,1))}
 function cardHtml(t){
@@ -862,7 +873,48 @@ function openPlan(plan=null){
   $("#planDialog").showModal();
 }
 
+const LIST_CHUNK_SIZE=20;
+let listRowsCache=[];
+let listRenderedCount=0;
+let listObserver=null;
+
+function disconnectListObserver(){
+  if(listObserver){listObserver.disconnect();listObserver=null;}
+}
+function appendListChunk(){
+  const list=$("#tsumList");
+  if(!list)return;
+  const oldSentinel=list.querySelector(".list-load-sentinel");
+  if(oldSentinel)oldSentinel.remove();
+  const next=listRowsCache.slice(listRenderedCount,listRenderedCount+LIST_CHUNK_SIZE);
+  if(next.length){
+    const holder=document.createElement("div");
+    holder.innerHTML=next.map(cardHtml).join("");
+    const fragment=document.createDocumentFragment();
+    while(holder.firstChild)fragment.appendChild(holder.firstChild);
+    list.appendChild(fragment);
+    wireCards(list);
+    listRenderedCount+=next.length;
+  }
+  if(listRenderedCount<listRowsCache.length){
+    const sentinel=document.createElement("button");
+    sentinel.type="button";
+    sentinel.className="list-load-sentinel load-more-button";
+    sentinel.textContent=`さらに表示（${listRenderedCount}/${listRowsCache.length}）`;
+    sentinel.onclick=appendListChunk;
+    list.appendChild(sentinel);
+    if("IntersectionObserver" in window){
+      disconnectListObserver();
+      listObserver=new IntersectionObserver(entries=>{
+        if(entries.some(entry=>entry.isIntersecting))appendListChunk();
+      },{rootMargin:"500px 0px"});
+      listObserver.observe(sentinel);
+    }
+  }else disconnectListObserver();
+}
+
 function renderList(){
+  disconnectListObserver();
   const q=$("#searchInput").value.trim().toLowerCase(),sort=$("#sortSelect").value;
   const cats=["すべて",...new Set(tsums.map(t=>t.category))];
   $("#categoryChips").innerHTML=cats.map(c=>`<button data-category="${esc(c)}" class="${c===category?"active":""}">${esc(c)}</button>`).join("");
@@ -907,8 +959,11 @@ function renderList(){
   const list=$("#tsumList");
   list.classList.toggle("compact",compact&&!gallery);
   list.classList.toggle("gallery",gallery);
-  list.innerHTML=rows.map(cardHtml).join("")||`<article class="panel helper">該当するツムがありません。</article>`;
-  wireCards(list);
+  list.innerHTML="";
+  listRowsCache=rows;
+  listRenderedCount=0;
+  if(rows.length)appendListChunk();
+  else list.innerHTML=`<article class="panel helper">該当するツムがありません。</article>`;
   $("#layoutMode").textContent=compact?"標準表示":"コンパクト";
   $("#galleryMode").textContent=gallery?"カード表示":"ギャラリー";
 }
@@ -1558,7 +1613,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.3.8 Stable Rebuilt",
+    version:"8.5.0 Fast List Edition",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1720,7 +1775,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.3.8 Stable Rebuilt",
+    version:"8.5.0 Fast List Edition",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1828,7 +1883,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3.8 Stable Rebuilt",
+      version:"8.5.0 Fast List Edition",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2076,7 +2131,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.3.8 Stable Rebuilt",
+        version:"8.5.0 Fast List Edition",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory
