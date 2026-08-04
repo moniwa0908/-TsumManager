@@ -614,7 +614,3 @@ dialog{
     font-size:10px;
   }
 }
-
-/* 8.5.0: fast incremental list rendering */
-.list-loading{min-height:84px;display:grid;place-items:center;text-align:center}
-.list-load-sentinel{width:100%;margin:5px 0 16px;grid-column:1/-1}
