@@ -475,34 +475,31 @@ function toast(message){
   setTimeout(()=>el.classList.remove("show"),1700);
 }
 function openMessage(title,body){$("#messageTitle").textContent=title;$("#messageBody").textContent=body;$("#messageDialog").showModal()}
-let listViewRenderToken=0;
 function showView(view){
   activeView=view;
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.id!==view+"View");
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  if(view==="home")renderHome();
+  if(view==="collection")renderCollection();
   if(view==="list"){
-    // 保存データや一覧構造は変更せず、先に画面だけ切り替えてから従来どおり全件描画する。
-    const token=++listViewRenderToken;
-    const list=$("#tsumList");
-    if(list)list.innerHTML='<article class="panel helper list-loading">一覧を読み込んでいます…</article>';
-    requestAnimationFrame(()=>{
-      if(activeView==="list"&&token===listViewRenderToken)renderList();
-    });
-  }else{
-    listViewRenderToken++;
-    if(view==="home")renderHome();
-    if(view==="collection")renderCollection();
-    if(view==="box")renderBox();
-    if(view==="training")renderTraining();
-    if(view==="stats")renderStats();
-    if(view==="strategy")renderStrategy();
-    if(view==="goals")renderGoals();
-    if(view==="planner")renderPlanner();
-    if(view==="settings")renderSettings();
+    // 先に画面切替をSafariへ反映し、その次の描画フレームで一覧を作る。
+    // 保存データや表示件数は変更せず、ボタンの反応だけを早くする。
+    const list=document.querySelector("#tsumList");
+    if(list&&!list.childElementCount)list.innerHTML=`<article class="panel helper">一覧を表示しています…</article>`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(activeView==="list")renderList();
+    }));
   }
+  if(view==="box")renderBox();
+  if(view==="training")renderTraining();
+  if(view==="stats")renderStats();
+  if(view==="strategy")renderStrategy();
+  if(view==="goals")renderGoals();
+  if(view==="planner")renderPlanner();
+  if(view==="settings")renderSettings();
   scrollTo({top:0,behavior:"auto"});
 }
-function avatarHtml(t){return t.image?`<img src="${esc(t.image)}" alt="">`:esc(t.name.slice(0,1))}
+function avatarHtml(t){return t.image?`<img src="${esc(t.image)}" alt="" loading="lazy" decoding="async">`:esc(t.name.slice(0,1))}
 function cardHtml(t){
   const tag=priorityText(t.priority);
   return `<article class="tsum-card ${remain(t)>0&&remain(t)<=5?"near-max":""}">
@@ -530,7 +527,15 @@ function cardHtml(t){
   </article>`;
 }
 function wireCards(scope){
-  scope.querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>handleCardAction(b.dataset.action,b.dataset.id));
+  // 各ボタンへ個別にイベントを付けず、一覧全体で1つだけ受け取る。
+  // 756体分のイベント登録をなくし、初回表示を軽くする。
+  if(scope.dataset.cardEventsWired==="1")return;
+  scope.dataset.cardEventsWired="1";
+  scope.addEventListener("click",event=>{
+    const button=event.target.closest("[data-action]");
+    if(!button||!scope.contains(button))return;
+    handleCardAction(button.dataset.action,button.dataset.id);
+  });
 }
 function handleCardAction(action,id){
   const t=tsums.find(x=>x.id===id);if(!t)return;
@@ -1569,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.5.1 Safe Fast List Fix",
+    version:"8.3.8 Stable Rebuilt",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1731,7 +1736,7 @@ $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 function buildFullBackup(){
   return {
     app:"TsumManager",
-    version:"8.5.1 Safe Fast List Fix",
+    version:"8.3.8 Stable Rebuilt",
     schemaVersion:1,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1839,7 +1844,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.5.1 Safe Fast List Fix",
+      version:"8.3.8 Stable Rebuilt",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -2087,7 +2092,7 @@ if(rescueBackupButton){
     }else{
       const backup={
         app:"TsumManager",
-        version:"8.5.1 Safe Fast List Fix",
+        version:"8.3.8 Stable Rebuilt",
         exportedAt:new Date().toISOString(),
         recoveredStorageKey,
         tsums,history,recent,plans,todayTrainingId,goals,ticketStock,snapshots,dailyTasks,undoHistory

@@ -614,3 +614,11 @@ dialog{
     font-size:10px;
   }
 }
+
+
+/* 8.4.6 Safari一覧高速化：画面外カードのレイアウト・描画を後回しにする。 */
+#tsumList .tsum-card{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 150px;
+}
+#tsumList.gallery .tsum-card{contain-intrinsic-size:auto 210px;}
