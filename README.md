@@ -1,4 +1,4 @@
-# TsumManager 8.4.4 Transformation Name Update Edition
+# TsumManager 8.4.5 Buzz Plus Name Update Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -23,6 +23,12 @@
 - 並び替えメニューに「ID順」を追加
 - マスターデータCSVをID昇順で出力
 
+
+## 8.4.5 changes
+
+- 「バズ・ライトイヤー＋」を「バズ＋」へ変更
+- ID 710は維持
+- 旧名称をaliasesへ追加し、保存データ・画像・CSVの引継ぎに対応
 
 ## 8.4.4 changes
 - 「スティッチ＆エンジェル」を「ラブリースティッチ＆エンジェル」に変更
