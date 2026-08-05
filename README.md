@@ -1,4 +1,4 @@
-# TsumManager 8.4.6 Safe List Performance Edition
+# TsumManager 8.4.7 Three Tsum Removal Edition
 
 ## 修正内容
 - ホームの「直前の操作」を削除
@@ -23,6 +23,14 @@
 - 並び替えメニューに「ID順」を追加
 - マスターデータCSVをID昇順で出力
 
+
+
+## 8.4.7 changes
+
+- 「デラクルス」「チャンスロット」「チャンセレラ」をマスターデータから削除。
+- 削除後の全ツムID・collectionOrder・releaseOrderを1から連番で再採番。
+- 総ツム数を756体から753体へ変更。
+- 保存データ引継ぎは行わない前提の更新。
 
 ## 8.4.6 changes
 
