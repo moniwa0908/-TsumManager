@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.12 Recent Priority Removed",
+  "name": "TsumManager 8.4.13 Near Skillmax Removed",
   "short_name": "TsumManager",
-  "description": "ホーム画面から最近使ったツムと育成優先を削除した版",
+  "description": "ホーム画面からスキルマ目前を削除したシンプル版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

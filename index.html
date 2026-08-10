@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.12 Recent Priority Removed</title>
+  <title>TsumManager 8.4.13 Near Skillmax Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.12 Recent Priority Removed</p>
+      <p>TsumManager 8.4.13 Near Skillmax Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -57,6 +57,10 @@
   <div id="recentTsumList"></div>
   <div id="homePriorityList"></div>
 </div>
+<div hidden aria-hidden="true" id="removedNearSkillmaxSupport">
+  <button id="showNearButton"></button>
+  <div id="homeNearList"></div>
+</div>
 <main>
     <section id="homeView" class="view">
       <article class="hero-card">
@@ -92,10 +96,7 @@
 
       
 
-      <article class="panel">
-        <div class="section-title"><h2>スキルマ目前</h2><button id="showNearButton">一覧で見る</button></div>
-        <div id="homeNearList" class="mini-list"></div>
-      </article>
+      
     </section>
 
 
