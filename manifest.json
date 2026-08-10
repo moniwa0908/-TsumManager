@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.10 Simple Home Edition",
+  "name": "TsumManager 8.4.10 Rankings Removed Fixed",
   "short_name": "TsumManager",
-  "description": "ホーム画面からスキルマ目前ランキングと必要コイン上位を削除した版",
+  "description": "ホーム画面からスキルマ目前ランキングと必要コイン上位のみを安全に削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
