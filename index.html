@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.7 Three Tsum Removal Edition</title>
+  <title>TsumManager 8.4.8 Simple Home Edition</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,12 +19,20 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.7 Three Tsum Removal Edition</p>
+      <p>TsumManager 8.4.8 Simple Home Edition</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
 
-  <main>
+  
+<div hidden aria-hidden="true">
+  <button id="addTaskButton"></button>
+  <div id="dailyTaskList"></div><i id="taskProgressBar"></i><p id="taskProgressText"></p>
+  <button id="saveSnapshotButton"></button>
+  <div id="snapshotSummary"></div><div id="snapshotChart"></div>
+</div>
+
+<main>
     <section id="homeView" class="view">
       <article class="hero-card">
         <div class="hero-top">
@@ -46,26 +54,6 @@
         <button data-home-filter="near" class="quick-card"><span>✨</span><b>スキルマ目前</b><small id="nearCount">0体</small></button>
         <button data-home-filter="unowned" class="quick-card"><span>🔒</span><b>未所持</b><small id="unownedCount">0体</small></button>
       </div>
-
-
-
-
-
-
-
-
-      <article class="panel">
-        <div class="section-title"><h2>今日のタスク</h2><button id="addTaskButton">追加</button></div>
-        <div id="dailyTaskList" class="task-list"></div>
-        <div class="task-progress"><i id="taskProgressBar"></i></div>
-        <p id="taskProgressText" class="helper"></p>
-      </article>
-
-      <article class="panel">
-        <div class="section-title"><h2>進捗記録</h2><button id="saveSnapshotButton">現在を記録</button></div>
-        <div id="snapshotSummary" class="snapshot-summary"></div>
-        <div id="snapshotChart" class="snapshot-chart"></div>
-      </article>
 
 
       <article class="panel">

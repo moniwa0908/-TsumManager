@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.5 Buzz Plus Name Update Edition",
+  "name": "TsumManager 8.4.8 Simple Home Edition",
   "short_name": "TsumManager",
-  "description": "ID順表示と名称移行に対応したコレクションID版",
+  "description": "ホーム画面の今日のタスクと進捗記録を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
