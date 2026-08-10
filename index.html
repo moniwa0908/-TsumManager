@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.10 Rankings Removed Fixed</title>
+  <title>TsumManager 8.4.11 Training Cards Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.10 Rankings Removed Fixed</p>
+      <p>TsumManager 8.4.11 Training Cards Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -45,6 +45,12 @@
   <div id="nearRankingList"></div>
   <button id="openCoinRankingButton"></button>
   <div id="coinRankingList"></div>
+</div>
+<div hidden aria-hidden="true" id="removedTrainingCardsSupport">
+  <button id="changeTodayTrainingButton"></button>
+  <div id="todayTrainingCard"></div>
+  <button id="refreshRecommendButton"></button>
+  <div id="recommendList"></div>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -73,16 +79,9 @@
 
       
 
-      <article class="panel">
-        <div class="section-title"><h2>今日の育成</h2><button id="changeTodayTrainingButton">変更</button></div>
-        <div id="todayTrainingCard" class="today-training-card"></div>
-      </article>
+      
 
-      <article class="panel">
-        <div class="section-title"><h2>おすすめ育成候補</h2><button id="refreshRecommendButton">再計算</button></div>
-        <p class="helper">残り数が少なく、未スキルマのツムを優先表示します。</p>
-        <div id="recommendList" class="mini-list"></div>
-      </article>
+      
 
       <article class="panel">
         <div class="section-title"><h2>最近使ったツム</h2><button id="clearRecentButton">履歴削除</button></div>

@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.10 Rankings Removed Fixed",
+  "name": "TsumManager 8.4.11 Training Cards Removed",
   "short_name": "TsumManager",
-  "description": "ホーム画面からスキルマ目前ランキングと必要コイン上位のみを安全に削除した版",
+  "description": "ホーム画面から今日の育成とおすすめ育成候補を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
