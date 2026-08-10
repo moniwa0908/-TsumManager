@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.9 Simpler Home Fixed",
+    version:"8.4.10 Simple Home Edition",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),

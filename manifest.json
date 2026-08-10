@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.9 Simpler Home Fixed",
+  "name": "TsumManager 8.4.10 Simple Home Edition",
   "short_name": "TsumManager",
-  "description": "ホームから月次成長レポートと育成アシスタントを安全に削除した版",
+  "description": "ホーム画面からスキルマ目前ランキングと必要コイン上位を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

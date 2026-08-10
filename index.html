@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.9 Simpler Home Fixed</title>
+  <title>TsumManager 8.4.10 Simple Home Edition</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.9 Simpler Home Fixed</p>
+      <p>TsumManager 8.4.10 Simple Home Edition</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -40,38 +40,36 @@
   <div id="assistantSuggestions"></div>
 </div>
 
+<div hidden aria-hidden="true" id="removedRankingSupport">
+  <div id="homePercent"></div>
+  <div id="progressRing"></div>
+  <div id="ringPercent"></div>
+  <div id="homeProgressBar"></div>
+  <div id="homeOwned"></div>
+  <div id="homeMaxed"></div>
+  <div id="homeRemaining"></div>
+  <div id="homeCoins"></div>
+  <div id="nearCount"></div>
+  <div id="unownedCount"></div>
+  <button id="openNearRankingButton"></button>
+  <div id="nearRankingList"></div>
+  <div id="homePercent"></div>
+  <div id="progressRing"></div>
+  <div id="ringPercent"></div>
+  <div id="homeProgressBar"></div>
+  <div id="homeOwned"></div>
+  <div id="homeMaxed"></div>
+  <div id="homeRemaining"></div>
+  <div id="homeCoins"></div>
+  <div id="nearCount"></div>
+  <div id="unownedCount"></div>
+  <button id="openNearRankingButton"></button>
+  <div id="nearRankingList"></div>
+  <button id="openCoinRankingButton"></button>
+  <div id="coinRankingList"></div>
+</div>
 <main>
     <section id="homeView" class="view">
-      <article class="hero-card">
-        <div class="hero-top">
-          <div><span>全体進捗</span><strong id="homePercent">0%</strong></div>
-          <div class="ring" id="progressRing"><b id="ringPercent">0%</b></div>
-        </div>
-        <div class="wide-progress"><i id="homeProgressBar"></i></div>
-        <div class="hero-stats">
-          <div><b id="homeOwned">0</b><span>所持済み</span></div>
-          <div><b id="homeMaxed">0</b><span>スキルマ</span></div>
-          <div><b id="homeRemaining">0</b><span>残り</span></div>
-          <div><b id="homeCoins">0</b><span>必要コイン</span></div>
-        </div>
-      </article>
-
-      <div class="quick-grid">
-        <button data-open-view="box" class="quick-card"><span>📦</span><b>BOX入力</b><small>複数体を一括反映</small></button>
-        <button data-open-view="training" class="quick-card"><span>🎯</span><b>育成予定</b><small>優先ツムを確認</small></button>
-        <button data-home-filter="near" class="quick-card"><span>✨</span><b>スキルマ目前</b><small id="nearCount">0体</small></button>
-        <button data-home-filter="unowned" class="quick-card"><span>🔒</span><b>未所持</b><small id="unownedCount">0体</small></button>
-      </div>
-
-      <article class="panel">
-        <div class="section-title"><h2>スキルマ目前ランキング</h2><button id="openNearRankingButton">一覧で見る</button></div>
-        <div id="nearRankingList" class="ranking-list"></div>
-      </article>
-
-      <article class="panel">
-        <div class="section-title"><h2>必要コイン上位</h2><button id="openCoinRankingButton">一覧で見る</button></div>
-        <div id="coinRankingList" class="ranking-list"></div>
-      </article>
 
       <article class="panel">
         <div class="section-title"><h2>今日の育成</h2><button id="changeTodayTrainingButton">変更</button></div>
