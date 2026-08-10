@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.16 Strategy Removed",
+  "name": "TsumManager 8.4.17 Compact Setting Removed",
   "short_name": "TsumManager",
-  "description": "攻略タブの表示機能をすべて削除したシンプル版",
+  "description": "設定から一覧をコンパクト表示を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
