@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.13 Near Skillmax Removed</title>
+  <title>TsumManager 8.4.14 Input Simplified</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.13 Near Skillmax Removed</p>
+      <p>TsumManager 8.4.14 Input Simplified</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -60,6 +60,15 @@
 <div hidden aria-hidden="true" id="removedNearSkillmaxSupport">
   <button id="showNearButton"></button>
   <div id="homeNearList"></div>
+</div>
+<div hidden aria-hidden="true" id="removedInputFeatureSupport">
+  <button id="clearHistoryButton"></button>
+  <div id="historyList"></div>
+  <button id="restoreLastHistoryButton"></button>
+  <input id="ticketSearch" type="search">
+  <div id="ticketCandidates"></div>
+  <select id="ticketAmount"></select>
+  <button id="applyTicketButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -180,28 +189,9 @@
         <div id="boxPreview" class="result-box">入力内容がここに表示されます。</div>
       </article>
 
-      <article class="panel">
-        <h2>スキルチケット入力</h2>
-        <p class="helper">対象ツムを検索して、反映する枚数を選びます。</p>
-        <input id="ticketSearch" type="search" placeholder="対象ツムを検索">
-        <div id="ticketCandidates" class="candidate-list"></div>
-        <div class="ticket-controls">
-          <select id="ticketAmount">
-            <option value="1">1枚</option>
-            <option value="2">2枚</option>
-            <option value="3">3枚</option>
-            <option value="5">5枚</option>
-            <option value="10">10枚</option>
-          </select>
-          <button id="applyTicketButton" class="primary-button">選択ツムへ反映</button>
-        </div>
-      </article>
+      
 
-      <article class="panel">
-        <div class="section-title"><h2>直近の入力履歴</h2><button id="clearHistoryButton">履歴削除</button></div>
-        <div id="historyList" class="history-list"></div>
-        <button id="restoreLastHistoryButton" class="secondary-button">最新履歴の操作を戻す</button>
-      </article>
+      
     </section>
 
     <section id="trainingView" class="view" hidden>

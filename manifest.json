@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.13 Near Skillmax Removed",
+  "name": "TsumManager 8.4.14 Input Simplified",
   "short_name": "TsumManager",
-  "description": "ホーム画面からスキルマ目前を削除したシンプル版",
+  "description": "入力タブから直近の入力履歴とスキルチケット入力を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
