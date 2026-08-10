@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.15 Goals Removed</title>
+  <title>TsumManager 8.4.16 Strategy Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.15 Goals Removed</p>
+      <p>TsumManager 8.4.16 Strategy Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -90,6 +90,13 @@
 <textarea id="goalMemo"></textarea>
 <button id="deleteGoalButton"></button>
 <button id="cancelGoalButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedStrategySupport">
+<button id="rankingOwnedOnlyButton"></button>
+<div id="personalRankingList"></div>
+<input id="missionSearchInput" type="search">
+<div id="missionResultList"></div>
+<div id="ratingCoverage"></div>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -235,29 +242,7 @@
     </section>
 
 
-    <section id="strategyView" class="view" hidden>
-      <article class="panel">
-        <div class="section-title"><h2>自分専用ランキング</h2><button id="rankingOwnedOnlyButton">所持ツムのみ</button></div>
-        <div class="ranking-tabs">
-          <button class="active" data-ranking-type="coin">コイン</button>
-          <button data-ranking-type="score">スコア</button>
-          <button data-ranking-type="ease">使いやすさ</button>
-          <button data-ranking-type="overall">総合</button>
-        </div>
-        <div id="personalRankingList" class="personal-ranking-list"></div>
-      </article>
-
-      <article class="panel">
-        <h2>ミッション適性検索</h2>
-        <input id="missionSearchInput" type="search" placeholder="例：フィーバー、コンボ、ボム">
-        <div id="missionResultList" class="mini-list"></div>
-      </article>
-
-      <article class="panel">
-        <h2>攻略データの登録状況</h2>
-        <div id="ratingCoverage" class="stats-grid"></div>
-      </article>
-    </section>
+    
 
     <section id="statsView" class="view" hidden>
       <article class="panel">
@@ -461,7 +446,6 @@
     <button data-view="collection"><span>▦</span><b>図鑑</b></button>
     <button data-view="list"><span>☷</span><b>一覧</b></button>
     <button data-view="box"><span>＋</span><b>入力</b></button>
-    <button data-view="strategy"><span>◆</span><b>攻略</b></button>
     
     <button data-view="settings"><span>⚙</span><b>設定</b></button>
   </nav>

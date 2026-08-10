@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.15 Goals Removed",
+  "name": "TsumManager 8.4.16 Strategy Removed",
   "short_name": "TsumManager",
-  "description": "目標タブの表示機能を全削除した版",
+  "description": "攻略タブの表示機能をすべて削除したシンプル版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
