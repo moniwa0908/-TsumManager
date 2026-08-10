@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.9 Simpler Home Edition</title>
+  <title>TsumManager 8.4.9 Simpler Home Fixed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.9 Simpler Home Edition</p>
+      <p>TsumManager 8.4.9 Simpler Home Fixed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -33,10 +33,11 @@
 </div>
 
 
-<div hidden aria-hidden="true">
-  <button id="refreshMonthlyReportButton"></button>
+<div hidden aria-hidden="true" id="removedHomeFeatureSupport">
+  <button id="refreshMonthlyReportButton" type="button"></button>
   <div id="monthlyReport"></div>
-  <div id="assistantContent"></div>
+  <button id="refreshAssistantButton" type="button"></button>
+  <div id="assistantSuggestions"></div>
 </div>
 
 <main>
