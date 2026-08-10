@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.11 Training Cards Removed</title>
+  <title>TsumManager 8.4.12 Recent Priority Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.11 Training Cards Removed</p>
+      <p>TsumManager 8.4.12 Recent Priority Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -52,6 +52,11 @@
   <button id="refreshRecommendButton"></button>
   <div id="recommendList"></div>
 </div>
+<div hidden aria-hidden="true" id="removedRecentPrioritySupport">
+  <button id="clearRecentButton"></button>
+  <div id="recentTsumList"></div>
+  <div id="homePriorityList"></div>
+</div>
 <main>
     <section id="homeView" class="view">
       <article class="hero-card">
@@ -83,15 +88,9 @@
 
       
 
-      <article class="panel">
-        <div class="section-title"><h2>最近使ったツム</h2><button id="clearRecentButton">履歴削除</button></div>
-        <div id="recentTsumList" class="mini-list"></div>
-      </article>
+      
 
-      <article class="panel">
-        <div class="section-title"><h2>育成優先</h2><button data-open-view="training">すべて見る</button></div>
-        <div id="homePriorityList" class="mini-list"></div>
-      </article>
+      
 
       <article class="panel">
         <div class="section-title"><h2>スキルマ目前</h2><button id="showNearButton">一覧で見る</button></div>

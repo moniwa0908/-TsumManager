@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.11 Training Cards Removed",
+    version:"8.4.12 Recent Priority Removed",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),

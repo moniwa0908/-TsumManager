@@ -1,4 +1,4 @@
-const CACHE="tsum-manager-8-4-11-training-cards-removed-20260810-01";
+const CACHE="tsum-manager-8-4-12-recent-priority-removed-20260810-01";
 const ASSETS=["./","./index.html","./style.css","./app.js","./tsums-data.js","./manifest.json","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
