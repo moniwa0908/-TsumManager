@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.14 Input Simplified</title>
+  <title>TsumManager 8.4.15 Goals Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.14 Input Simplified</p>
+      <p>TsumManager 8.4.15 Goals Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -69,6 +69,27 @@
   <div id="ticketCandidates"></div>
   <select id="ticketAmount"></select>
   <button id="applyTicketButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedGoalsSupport">
+<button id="newGoalButton"></button>
+<div id="goalList"></div>
+<button id="ticketStockMinus"></button>
+<strong id="ticketStockValue"></strong>
+<button id="ticketStockPlus"></button>
+<div id="goalSimulation"></div>
+<dialog id="goalDialog"></dialog>
+<form id="goalForm"></form>
+<h2 id="goalDialogTitle"></h2>
+<input id="goalId" type="hidden">
+<input id="goalTsumName">
+<select id="goalType"><option value="max">max</option></select>
+<label id="goalTargetWrap"></label>
+<input id="goalTargetOwned" type="number">
+<input id="goalDeadline" type="date">
+<input id="goalMilestone" type="number">
+<textarea id="goalMemo"></textarea>
+<button id="deleteGoalButton"></button>
+<button id="cancelGoalButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -259,28 +280,7 @@
 
 
 
-    <section id="goalsView" class="view" hidden>
-      <article class="panel">
-        <div class="section-title"><h2>育成目標</h2><button id="newGoalButton">新規作成</button></div>
-        <p class="helper">「このツムをスキルマにする」など、目標と期限を登録できます。</p>
-        <div id="goalList" class="goal-list"></div>
-      </article>
-
-      <article class="panel">
-        <h2>スキルチケット在庫</h2>
-        <div class="ticket-stock">
-          <button id="ticketStockMinus">−</button>
-          <strong id="ticketStockValue">0</strong>
-          <button id="ticketStockPlus">＋</button>
-        </div>
-        <p class="helper">在庫数は育成アシスタントと目標シミュレーションに使用します。</p>
-      </article>
-
-      <article class="panel">
-        <h2>目標達成シミュレーション</h2>
-        <div id="goalSimulation" class="simulator-result">目標を登録すると、必要枚数と不足数を表示します。</div>
-      </article>
-    </section>
+    
 
     <section id="plannerView" class="view" hidden>
 
@@ -461,7 +461,6 @@
     <button data-view="collection"><span>▦</span><b>図鑑</b></button>
     <button data-view="list"><span>☷</span><b>一覧</b></button>
     <button data-view="box"><span>＋</span><b>入力</b></button>
-    <button data-view="goals"><span>★</span><b>目標</b></button>
     <button data-view="strategy"><span>◆</span><b>攻略</b></button>
     
     <button data-view="settings"><span>⚙</span><b>設定</b></button>
@@ -587,36 +586,7 @@
   </form>
 </dialog>
 
-<dialog id="goalDialog">
-  <form id="goalForm">
-    <h2 id="goalDialogTitle">育成目標を作成</h2>
-    <input id="goalId" type="hidden">
-    <label>対象ツム
-      <input id="goalTsumName" required placeholder="ツム名を入力">
-    </label>
-    <label>目標
-      <select id="goalType">
-        <option value="max">スキルマ</option>
-        <option value="owned">指定数まで育成</option>
-      </select>
-    </label>
-    <label id="goalTargetWrap">目標所持数
-      <input id="goalTargetOwned" type="number" min="1" max="999" value="36">
-    </label>
-    <label>期限
-      <input id="goalDeadline" type="date">
-    </label>
-    <label>途中目標（任意）
-      <input id="goalMilestone" type="number" min="1" max="999" placeholder="例：20">
-    </label>
-    <label>メモ<textarea id="goalMemo"></textarea></label>
-    <div class="dialog-actions">
-      <button type="button" id="deleteGoalButton" class="danger-button">削除</button>
-      <button type="button" id="cancelGoalButton" class="secondary-button">キャンセル</button>
-      <button type="submit" class="primary-button">保存</button>
-    </div>
-  </form>
-</dialog>
+
 
 <dialog id="todayTrainingDialog">
   <div class="message-dialog">

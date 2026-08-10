@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.14 Input Simplified",
+  "name": "TsumManager 8.4.15 Goals Removed",
   "short_name": "TsumManager",
-  "description": "入力タブから直近の入力履歴とスキルチケット入力を削除した版",
+  "description": "目標タブの表示機能を全削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
