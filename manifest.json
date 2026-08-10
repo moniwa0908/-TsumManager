@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.8 Simple Home Edition",
+  "name": "TsumManager 8.4.9 Simpler Home Edition",
   "short_name": "TsumManager",
-  "description": "ホーム画面の今日のタスクと進捗記録を削除した版",
+  "description": "ホーム画面の月次成長レポートと育成アシスタントを削除したシンプル版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

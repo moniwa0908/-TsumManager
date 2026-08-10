@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.8 Simple Home Edition</title>
+  <title>TsumManager 8.4.9 Simpler Home Edition</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.8 Simple Home Edition</p>
+      <p>TsumManager 8.4.9 Simpler Home Edition</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -30,6 +30,13 @@
   <div id="dailyTaskList"></div><i id="taskProgressBar"></i><p id="taskProgressText"></p>
   <button id="saveSnapshotButton"></button>
   <div id="snapshotSummary"></div><div id="snapshotChart"></div>
+</div>
+
+
+<div hidden aria-hidden="true">
+  <button id="refreshMonthlyReportButton"></button>
+  <div id="monthlyReport"></div>
+  <div id="assistantContent"></div>
 </div>
 
 <main>
@@ -54,18 +61,6 @@
         <button data-home-filter="near" class="quick-card"><span>✨</span><b>スキルマ目前</b><small id="nearCount">0体</small></button>
         <button data-home-filter="unowned" class="quick-card"><span>🔒</span><b>未所持</b><small id="unownedCount">0体</small></button>
       </div>
-
-
-      <article class="panel">
-        <div class="section-title"><h2>月次成長レポート</h2><button id="refreshMonthlyReportButton">更新</button></div>
-        <div id="monthlyReport" class="monthly-report"></div>
-      </article>
-
-      <article class="panel assistant-panel">
-        <div class="section-title"><h2>育成アシスタント</h2><button id="refreshAssistantButton">更新</button></div>
-        <p class="helper">現在の所持数、育成予定、スキルチケット在庫から候補を提案します。</p>
-        <div id="assistantSuggestions" class="assistant-suggestions"></div>
-      </article>
 
       <article class="panel">
         <div class="section-title"><h2>スキルマ目前ランキング</h2><button id="openNearRankingButton">一覧で見る</button></div>
