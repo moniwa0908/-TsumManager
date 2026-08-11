@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.24 Home Cards Removed Fixed</title>
+  <title>TsumManager 8.4.25 Backup Buttons Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.24 Home Cards Removed Fixed</p>
+      <p>TsumManager 8.4.25 Backup Buttons Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -128,6 +128,7 @@
 <button id="mergeMasterButton"></button>
 <button id="resetButton"></button>
 </div>
+<div hidden aria-hidden="true" id="removedBackupButtonsSupport"><button id="quickBackupButton"></button><button id="backupTestButton"></button></div>
 <main>
     <section id="homeView" class="view">
       <article class="hero-card">
@@ -364,8 +365,8 @@
           <input id="importFullBackupInput" type="file" accept=".json,application/json">
         </label>
         <label class="switch-row"><span>読込前に現在のデータを自動バックアップ</span><input id="autoBackupBeforeImport" type="checkbox" checked></label>
-        <button type="button" id="quickBackupButton">更新前クイックバックアップ</button>
-        <button type="button" id="backupTestButton">バックアップボタン動作確認</button>
+        
+        
         <p class="backup-ios-guide">iPhoneでは共有画面が開きます。「ファイルに保存」→「iCloud Drive」などを選んでください。</p>
         <div id="backupStatus" class="result-box">まだバックアップは作成されていません。</div>
       </article>

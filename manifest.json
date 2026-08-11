@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.24 Home Cards Removed Fixed",
+  "name": "TsumManager 8.4.25 Backup Buttons Removed",
   "short_name": "TsumManager",
-  "description": "図鑑を維持したままホームのBOX入力・育成予定・スキルマ目前・未所持のみ非表示にした修正版",
+  "description": "完全バックアップから更新前クイックバックアップとバックアップボタン動作確認を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
