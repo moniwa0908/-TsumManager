@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.21 Recovery Mode Removed</title>
+  <title>TsumManager 8.4.22 Diagnostics Quick Input Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.21 Recovery Mode Removed</p>
+      <p>TsumManager 8.4.22 Diagnostics Quick Input Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -115,6 +115,12 @@
 <div hidden aria-hidden="true" id="removedRecoveryModeSupport">
 <div id="rescueStatus"></div>
 <button id="rescueBackupButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedDiagnosticsQuickInputSupport">
+<button id="runHealthCheckButton"></button>
+<div id="healthResult"></div>
+<textarea id="quickOwnedText"></textarea>
+<button id="applyQuickOwnedButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -410,17 +416,9 @@
 
 
 
-      <article class="panel settings-panel">
-        <h2>クイック所持数入力</h2>
-        <p class="helper">ツム名と所持数を1行ずつ入力します。例：エルサ,12</p>
-        <textarea id="quickOwnedText" placeholder="エルサ,12&#10;野獣,30"></textarea>
-        <button id="applyQuickOwnedButton">まとめて反映</button>
-      </article>
+      
 
-      <article class="panel">
-        <div class="section-title"><h2>データ診断</h2><button id="runHealthCheckButton">診断する</button></div>
-        <div id="healthResult" class="health-result">未診断です。</div>
-      </article>
+      
 
       <article class="panel">
         <h2>アプリ情報</h2>
