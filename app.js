@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.25 Backup Buttons Removed",
+    version:"8.4.26 Full Backup Image Restore Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1733,18 +1733,26 @@ $("#openCoinRankingButton").onclick=()=>{$("#sortSelect").value="remain";status=
 window.addEventListener("scroll",()=>$("#scrollTopButton").classList.toggle("show",scrollY>500),{passive:true});
 $("#scrollTopButton").onclick=()=>scrollTo({top:0,behavior:"smooth"});
 
-function buildFullBackup(){
+async function buildFullBackup(){
+  const storedImages=await getAllStoredImages();
+  const imageById=new Map(storedImages.map(x=>[x.id,x.image]));
+  const imageByName=new Map(storedImages.map(x=>[x.name,x.image]));
+  const backupTsums=tsums.map(t=>({
+    ...t,
+    image:t.image||imageById.get(t.id)||imageByName.get(t.name)||""
+  }));
+
   return {
     app:"TsumManager",
-    version:"8.3.8 Stable Rebuilt",
-    schemaVersion:1,
+    version:"8.4.26 Full Backup Image Restore Fix",
+    schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
       userAgent:navigator.userAgent,
       language:navigator.language
     },
     userData:buildStableUserStore(),
-    tsums,
+    tsums:backupTsums,
     history,
     recent,
     plans,
@@ -1832,7 +1840,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
     // タップ処理をSafariへ返してから大きなJSONを生成する。
     await new Promise(resolve=>setTimeout(resolve,30));
 
-    const data=buildFullBackup();
+    const data=await buildFullBackup();
     const result=await saveBackupFile(data,backupFileName(prefix),preferShare);
 
     if(result.method==="cancelled"){
@@ -1844,7 +1852,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.3.8 Stable Rebuilt",
+      version:"8.4.26 Full Backup Image Restore Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
@@ -1882,7 +1890,29 @@ function validateBackup(data){
 }
 async function restoreFullBackup(data){
   validateBackup(data);
+
+  // バックアップ内の画像を、mergeMasterで個人データを統合する前に確保する。
+  const backupImageRows=(Array.isArray(data.tsums)?data.tsums:[])
+    .filter(t=>t&&typeof t.image==="string"&&t.image.length>20)
+    .map(t=>({id:t.id,name:t.name,image:t.image}));
+
+  // 画像のない古い/不完全バックアップを読み込んだ場合に、
+  // 現在のIndexedDB画像を消さないよう退避する。
+  const currentStoredImages=await getAllStoredImages();
+
   tsums=mergeMaster(data.tsums);
+
+  // mergeMasterでは画像をユーザーデータとして引き継がないため、
+  // バックアップ画像をID優先・名前補助で再結合する。
+  if(backupImageRows.length){
+    const byId=new Map(backupImageRows.map(x=>[x.id,x.image]));
+    const byName=new Map(backupImageRows.map(x=>[x.name,x.image]));
+    for(const t of tsums){
+      const img=byId.get(t.id)||byName.get(t.name);
+      if(img)t.image=img;
+    }
+  }
+
   history=Array.isArray(data.history)?data.history:[];
   recent=Array.isArray(data.recent)?data.recent:[];
   plans=Array.isArray(data.plans)?data.plans:[];
@@ -1904,9 +1934,25 @@ async function restoreFullBackup(data){
     rankingOwnedOnly=data.settings.rankingOwnedOnly!==false;
     increment=Number(data.settings.increment)||1;
   }
+
   save();saveHistory();saveRecent();savePlans();saveToday();saveGoals();saveTicketStock();saveSnapshots();saveTasks();saveUndoHistory();
-  await replaceAllStoredImages(tsums);
+
+  if(backupImageRows.length){
+    // 画像入りバックアップならバックアップ画像でIndexedDBを復元。
+    await replaceAllStoredImages(tsums);
+  }else{
+    // 画像が無いバックアップなら既存画像は絶対に消さず、現在のツムへ再結合。
+    const byId=new Map(currentStoredImages.map(x=>[x.id,x.image]));
+    const byName=new Map(currentStoredImages.map(x=>[x.name,x.image]));
+    for(const t of tsums){
+      const img=byId.get(t.id)||byName.get(t.name);
+      if(img)t.image=img;
+    }
+  }
+
+  await hydrateImagesFromDb();
   renderAll();renderSettings();
+  return {restoredImages:backupImageRows.length,preservedImages:backupImageRows.length?0:currentStoredImages.length};
 }
 function renderBackupSummary(){
   const images=tsums.filter(t=>t.image).length;
@@ -1965,8 +2011,8 @@ $("#importFullBackupInput").onchange=e=>{
     try{
       const data=JSON.parse(String(reader.result));
       validateBackup(data);
-      const imageCount=data.tsums.filter(t=>t.image).length;
-      const message=`バックアップを読み込みます。\n\nツム数：${data.tsums.length}体\n画像：${imageCount}体\n作成日時：${data.exportedAt?new Date(data.exportedAt).toLocaleString("ja-JP"):"不明"}\n\n現在のデータは置き換えられます。`;
+      const imageCount=data.tsums.filter(t=>t&&typeof t.image==="string"&&t.image.length>20).length;
+      const message=`バックアップを読み込みます。\n\nツム数：${data.tsums.length}体\n画像：${imageCount}体\n作成日時：${data.exportedAt?new Date(data.exportedAt).toLocaleString("ja-JP"):"不明"}\n\n${imageCount===0?"※このバックアップに画像は含まれていません。現在の画像は消さずに保持します。\n\n":""}現在のデータを復元します。`;
       if(!confirm(message))return;
       if($("#autoBackupBeforeImport").checked)await exportFullBackup("TsumManager_BeforeRestore",false);
       await restoreFullBackup(data);
