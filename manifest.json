@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.24 Home Cards Removed",
+  "name": "TsumManager 8.4.24 Home Cards Removed Fixed",
   "short_name": "TsumManager",
-  "description": "ホームからBOX入力・育成予定・スキルマ目前・未所持を削除した版",
+  "description": "図鑑を維持したままホームのBOX入力・育成予定・スキルマ目前・未所持のみ非表示にした修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

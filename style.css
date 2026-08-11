@@ -625,3 +625,6 @@ dialog{
 
 /* Ver.8.4.17 fixed: 現在の5タブを均等配置 */
 .bottom-nav{grid-template-columns:repeat(5,1fr)!important}
+
+/* 8.4.24 Fixed: ホームの不要クイックカードのみ非表示。図鑑構造には触れない */
+.home-card-hidden{display:none!important;}
