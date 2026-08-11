@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.17 Compact Setting Removed Fixed</title>
+  <title>TsumManager 8.4.18 Progress Management Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.17 Compact Setting Removed Fixed</p>
+      <p>TsumManager 8.4.18 Progress Management Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -99,6 +99,10 @@
 <div id="ratingCoverage"></div>
 </div>
 <input id="compactToggle" type="checkbox" hidden aria-hidden="true">
+<div hidden aria-hidden="true" id="removedProgressManagementSupport">
+<button id="deleteLastSnapshotButton"></button>
+<button id="clearSnapshotsButton"></button>
+</div>
 <main>
     <section id="homeView" class="view">
       <article class="hero-card">
@@ -314,12 +318,7 @@
         
       </article>
 
-      <article class="panel settings-panel">
-        <h2>進捗記録管理</h2>
-        <p class="helper">記録はバックアップにも含まれます。</p>
-        <button id="deleteLastSnapshotButton">最新の進捗記録を削除</button>
-        <button id="clearSnapshotsButton" class="danger-button">進捗記録をすべて削除</button>
-      </article>
+      
 
 
 

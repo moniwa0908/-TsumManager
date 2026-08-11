@@ -1,5 +1,5 @@
 {
-  "name": "TsumManager 8.4.17 Compact Setting Removed Fixed",
+  "name": "TsumManager 8.4.18 Progress Management Removed",
   "short_name": "TsumManager",
   "description": "一覧をコンパクト表示のみを安全に削除し、図鑑と画像一括登録を維持した修正版",
   "start_url": "./",
