@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.22 Diagnostics Quick Input Removed</title>
+  <title>TsumManager 8.4.23 Data Management Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.22 Diagnostics Quick Input Removed</p>
+      <p>TsumManager 8.4.23 Data Management Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -121,6 +121,12 @@
 <div id="healthResult"></div>
 <textarea id="quickOwnedText"></textarea>
 <button id="applyQuickOwnedButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedDataManagementSupport">
+<button id="exportButton"></button>
+<input id="importInput" type="file">
+<button id="mergeMasterButton"></button>
+<button id="resetButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -371,13 +377,7 @@
         <label class="file-button">CSVを読み込む<input id="importCsvInput" type="file" accept=".csv,text/csv"></label>
       </article>
 
-      <article class="panel settings-panel">
-        <h2>データ管理</h2>
-        <p class="helper">所持数・スキル進捗・メモなどだけを保存します。画像は含みません。</p><button type="button" id="exportButton">軽量バックアップ（画像なし）を書き出す</button>
-        <label class="file-button">軽量バックアップを読み込む<input id="importInput" type="file" accept=".json,application/json"></label>
-        <button id="mergeMasterButton">収録ツムを再統合</button>
-        <button id="resetButton" class="danger-button">全データを初期化</button>
-      </article>
+      
 
 
 
