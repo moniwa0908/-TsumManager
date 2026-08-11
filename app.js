@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.18 Progress Management Removed",
+    version:"8.4.19 Stable Status Removed",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),

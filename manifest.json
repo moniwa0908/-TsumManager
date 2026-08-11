@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.18 Progress Management Removed",
+  "name": "TsumManager 8.4.19 Stable Status Removed",
   "short_name": "TsumManager",
-  "description": "一覧をコンパクト表示のみを安全に削除し、図鑑と画像一括登録を維持した修正版",
+  "description": "設定画面から安定版ステータスを削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

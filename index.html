@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.18 Progress Management Removed</title>
+  <title>TsumManager 8.4.19 Stable Status Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.18 Progress Management Removed</p>
+      <p>TsumManager 8.4.19 Stable Status Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -102,6 +102,11 @@
 <div hidden aria-hidden="true" id="removedProgressManagementSupport">
 <button id="deleteLastSnapshotButton"></button>
 <button id="clearSnapshotsButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedStableStatusSupport">
+<div id="stableStatus"></div>
+<button id="rerenderListButton"></button>
+<button id="reloadImagesStableButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -324,12 +329,7 @@
 
       
       
-      <article class="panel settings-panel stable-status-panel">
-        <h2>安定版ステータス</h2>
-        <div id="stableStatus" class="result-box">アプリを確認しています。</div>
-        <button type="button" id="rerenderListButton">一覧を再表示</button>
-        <button type="button" id="reloadImagesStableButton">保存済み画像を再読み込み</button>
-      </article>
+      
 
       <article class="panel settings-panel safe-storage-panel">
         <h2>安全保存システム</h2>
