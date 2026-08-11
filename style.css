@@ -622,3 +622,6 @@ dialog{
   contain-intrinsic-size:auto 150px;
 }
 #tsumList.gallery .tsum-card{contain-intrinsic-size:auto 210px;}
+
+/* Ver.8.4.17 fixed: 現在の5タブを均等配置 */
+.bottom-nav{grid-template-columns:repeat(5,1fr)!important}

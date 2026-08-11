@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.17 Compact Setting Removed</title>
+  <title>TsumManager 8.4.17 Compact Setting Removed Fixed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.17 Compact Setting Removed</p>
+      <p>TsumManager 8.4.17 Compact Setting Removed Fixed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -98,10 +98,7 @@
 <div id="missionResultList"></div>
 <div id="ratingCoverage"></div>
 </div>
-<div hidden aria-hidden="true" id="removedCompactSettingSupport">
-<input id="darkToggle" type="checkbox">
-<input id="compactToggle" type="checkbox">
-</div>
+<input id="compactToggle" type="checkbox" hidden aria-hidden="true">
 <main>
     <section id="homeView" class="view">
       <article class="hero-card">
@@ -313,6 +310,8 @@
     <section id="settingsView" class="view" hidden>
       <article class="panel settings-panel">
         <h2>表示設定</h2>
+        <label class="switch-row"><span>ダークモード</span><input id="darkToggle" type="checkbox"></label>
+        
       </article>
 
       <article class="panel settings-panel">

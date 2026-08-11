@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.17 Compact Setting Removed",
+  "name": "TsumManager 8.4.17 Compact Setting Removed Fixed",
   "short_name": "TsumManager",
-  "description": "設定から一覧をコンパクト表示を削除した版",
+  "description": "一覧をコンパクト表示のみを安全に削除し、図鑑と画像一括登録を維持した修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
