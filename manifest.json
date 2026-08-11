@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.19 Stable Status Removed",
+  "name": "TsumManager 8.4.20 Safe Save Removed",
   "short_name": "TsumManager",
-  "description": "設定画面から安定版ステータスを削除した版",
+  "description": "設定画面から安全保存システムを削除し、完全バックアップを維持した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

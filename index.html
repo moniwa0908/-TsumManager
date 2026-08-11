@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.19 Stable Status Removed</title>
+  <title>TsumManager 8.4.20 Safe Save Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.19 Stable Status Removed</p>
+      <p>TsumManager 8.4.20 Safe Save Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -107,6 +107,10 @@
 <div id="stableStatus"></div>
 <button id="rerenderListButton"></button>
 <button id="reloadImagesStableButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedSafeSaveSupport">
+<div id="safeStorageStatus"></div>
+<button id="saveUserDataNowButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -331,15 +335,7 @@
       
       
 
-      <article class="panel settings-panel safe-storage-panel">
-        <h2>安全保存システム</h2>
-        <div id="safeStorageStatus" class="result-box">保存状態を確認しています。</div>
-        <p class="helper">
-          所持数・スキル進捗・メモは固定のユーザー保存領域へ、
-          画像はIndexedDBへ保存します。今後のアプリ更新ではマスターデータだけを更新します。
-        </p>
-        <button type="button" id="saveUserDataNowButton">現在の入力データを保存</button>
-      </article>
+      
 
       <article class="panel settings-panel rescue-panel">
         <h2>データ復旧モード</h2>
