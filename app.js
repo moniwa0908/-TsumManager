@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.20 Safe Save Removed",
+    version:"8.4.21 Recovery Mode Removed",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),

@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./style.css">
-  <title>TsumManager 8.4.20 Safe Save Removed</title>
+  <title>TsumManager 8.4.21 Recovery Mode Removed</title>
 </head>
 <body>
   <div id="startupErrorBanner" class="startup-error-banner" hidden></div>
@@ -19,7 +19,7 @@
   <header class="app-header">
     <div>
       <h1>ツム管理</h1>
-      <p>TsumManager 8.4.20 Safe Save Removed</p>
+      <p>TsumManager 8.4.21 Recovery Mode Removed</p>
     </div>
     <button id="quickAddButton" class="round-button" aria-label="ツムを追加">＋</button>
   </header>
@@ -111,6 +111,10 @@
 <div hidden aria-hidden="true" id="removedSafeSaveSupport">
 <div id="safeStorageStatus"></div>
 <button id="saveUserDataNowButton"></button>
+</div>
+<div hidden aria-hidden="true" id="removedRecoveryModeSupport">
+<div id="rescueStatus"></div>
+<button id="rescueBackupButton"></button>
 </div>
 <main>
     <section id="homeView" class="view">
@@ -337,12 +341,7 @@
 
       
 
-      <article class="panel settings-panel rescue-panel">
-        <h2>データ復旧モード</h2>
-        <p class="helper">過去の保存領域を比較し、画像・所持数などの入力が最も多いデータを自動で読み込みます。Safariの履歴やWebサイトデータは消去しないでください。</p>
-        <div id="rescueStatus" class="result-box">復旧データを確認しています。</div>
-        <button type="button" id="rescueBackupButton" class="primary-button">復旧したデータをバックアップ</button>
-      </article>
+      
 
       <article class="panel settings-panel backup-panel">
         <h2>完全バックアップ</h2>

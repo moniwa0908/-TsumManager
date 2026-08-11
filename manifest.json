@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.20 Safe Save Removed",
+  "name": "TsumManager 8.4.21 Recovery Mode Removed",
   "short_name": "TsumManager",
-  "description": "設定画面から安全保存システムを削除し、完全バックアップを維持した版",
+  "description": "設定画面からデータ復旧モードを削除し、完全バックアップを維持した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
