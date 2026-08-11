@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.23 Data Management Removed",
+  "name": "TsumManager 8.4.24 Home Cards Removed",
   "short_name": "TsumManager",
-  "description": "設定画面からデータ管理を削除したシンプル版",
+  "description": "ホームからBOX入力・育成予定・スキルマ目前・未所持を削除した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
