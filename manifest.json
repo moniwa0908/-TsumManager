@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.28 Add Three Tsums",
+  "name": "TsumManager 8.4.29 Image Mapping Fix",
   "short_name": "TsumManager",
-  "description": "完全バックアップで画像を確実に書き出し・復元し、画像なしバックアップでも既存画像を消さない版",
+  "description": "ID並び替え後の図鑑画像の誤紐付けを修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -269,23 +269,25 @@ async function replaceAllStoredImages(rows){
 }
 async function hydrateImagesFromDb(){
   try{
-    const images=await getAllStoredImages();
-    const byId=new Map(images.map(x=>[x.id,x.image]));
-    const byName=new Map(images.map(x=>[x.name,x.image]));
-    for(const t of tsums){
-      let image=byId.get(t.id)||byName.get(t.name);
-      if(!image&&Array.isArray(t.aliases)){
-        for(const alias of t.aliases){
-          image=byName.get(alias);
-          if(image)break;
-        }
-      }
-      if(image)t.image=image;
+    const stored=await getAllStoredImages();
+    if(!stored.length)return;
+    const byName=new Map();
+    const byId=new Map();
+    for(const row of stored){
+      if(row&&row.name&&row.image)byName.set(row.name,row.image);
+      if(row&&row.id&&row.image)byId.set(String(row.id),row);
     }
-    renderAll();
-  }catch(err){
-    console.warn("画像の読込に失敗",err);
-  }
+    let changed=false;
+    for(const t of tsums){
+      let img=byName.get(t.name)||"";
+      if(!img){
+        const row=byId.get(String(t.id));
+        if(row&&(!row.name||row.name===t.name))img=row.image||"";
+      }
+      if(img&&t.image!==img){t.image=img;changed=true;}
+    }
+    if(changed)save();
+  }catch(e){console.error("画像DB読込エラー",e);}
 }
 async function migrateLegacyImages(){
   const source=legacyRecoveredRows.filter(t=>t&&t.image);
@@ -1574,7 +1576,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.28 Add Three Tsums",
+    version:"8.4.29 Image Mapping Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1744,7 +1746,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.28 Add Three Tsums",
+    version:"8.4.29 Image Mapping Fix",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1852,7 +1854,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.28 Add Three Tsums",
+      version:"8.4.29 Image Mapping Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
