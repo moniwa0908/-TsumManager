@@ -1574,7 +1574,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.26 Full Backup Image Restore Fix",
+    version:"8.4.28 Add Three Tsums",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1744,7 +1744,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.26 Full Backup Image Restore Fix",
+    version:"8.4.28 Add Three Tsums",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1852,7 +1852,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.26 Full Backup Image Restore Fix",
+      version:"8.4.28 Add Three Tsums",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
