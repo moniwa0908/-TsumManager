@@ -539,6 +539,42 @@ function wireCards(scope){
     handleCardAction(button.dataset.action,button.dataset.id);
   });
 }
+
+// Ver.8.4.30: 一覧入力時の画面位置固定
+function renderAllKeepPosition(){
+  const x=window.scrollX||0;
+  const y=window.scrollY||0;
+
+  // スクロール可能な主要領域がある場合も位置を保存
+  const scrollStates=[];
+  document.querySelectorAll(".view,.list,.collection-grid,.card-list").forEach(el=>{
+    if(el.scrollHeight>el.clientHeight||el.scrollWidth>el.clientWidth){
+      scrollStates.push([el,el.scrollLeft,el.scrollTop]);
+    }
+  });
+
+  renderAll();
+
+  // DOM再描画直後と次フレームの両方で位置を戻す。
+  // iPhone Safariの画像再レイアウトによる微妙なジャンプも抑える。
+  window.scrollTo(x,y);
+  for(const [el,left,top] of scrollStates){
+    if(el&&el.isConnected){
+      el.scrollLeft=left;
+      el.scrollTop=top;
+    }
+  }
+  requestAnimationFrame(()=>{
+    window.scrollTo(x,y);
+    for(const [el,left,top] of scrollStates){
+      if(el&&el.isConnected){
+        el.scrollLeft=left;
+        el.scrollTop=top;
+      }
+    }
+  });
+}
+
 function handleCardAction(action,id){
   const t=tsums.find(x=>x.id===id);if(!t)return;
   if(action==="plus"){
@@ -562,7 +598,7 @@ function handleCardAction(action,id){
   if(action==="detail"){touchRecent(t.id);openDetail(t);return}
   if(action==="edit"){touchRecent(t.id);openEdit(t);return}
   touchRecent(t.id);
-  save();renderAll();
+  save();renderAllKeepPosition();
 }
 function summary(){
   const total=tsums.reduce((s,t)=>s+t.required,0);
@@ -1576,7 +1612,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.29 Image Mapping Fix",
+    version:"8.4.30 Stable Input Position",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1746,7 +1782,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.29 Image Mapping Fix",
+    version:"8.4.30 Stable Input Position",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1854,7 +1890,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.29 Image Mapping Fix",
+      version:"8.4.30 Stable Input Position",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));

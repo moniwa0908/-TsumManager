@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.29 Image Mapping Fix",
+  "name": "TsumManager 8.4.30 Stable Input Position",
   "short_name": "TsumManager",
-  "description": "ID並び替え後の図鑑画像の誤紐付けを修正した版",
+  "description": "所持数を順番に入力しても一覧画面の位置が動かないようにした版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

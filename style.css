@@ -628,3 +628,12 @@ dialog{
 
 /* 8.4.24 Fixed: ホームの不要クイックカードのみ非表示。図鑑構造には触れない */
 .home-card-hidden{display:none!important;}
+
+
+/* Ver.8.4.30: 連続入力時のスクロールジャンプ防止 */
+#listView,
+#collectionView,
+.card-list,
+.tsum-list{
+  overflow-anchor:none;
+}
