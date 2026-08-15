@@ -575,6 +575,41 @@ function renderAllKeepPosition(){
   });
 }
 
+
+// Ver.8.4.31: 入力時は一覧全体を再描画せず、対象カードだけ更新する
+function updateCardInPlace(id){
+  const t=tsums.find(x=>x.id===id);
+  if(!t)return;
+
+  const card=document.querySelector(`[data-card-id="${CSS.escape(String(id))}"]`);
+  if(!card)return;
+
+  const countEl=card.querySelector(".counter b");
+  if(countEl){
+    countEl.textContent=`${t.owned}/${t.required}`;
+    countEl.classList.toggle("maxed",remain(t)===0);
+  }
+
+  const progress=card.querySelector(".mini-progress i");
+  if(progress)progress.style.width=pct(t)+"%";
+
+  const skillEl=card.querySelector(".skill-text, [data-skill-text]");
+  if(skillEl)skillEl.textContent=skillText(t);
+
+  const favoriteButton=card.querySelector('[data-action="favorite"]');
+  if(favoriteButton){
+    favoriteButton.classList.toggle("active",!!t.favorite);
+    favoriteButton.setAttribute("aria-pressed",t.favorite?"true":"false");
+  }
+}
+
+function updateSummaryWithoutListRerender(){
+  try{renderHome();}catch(e){}
+  try{
+    if(activeView==="settings")renderSettings();
+  }catch(e){}
+}
+
 function handleCardAction(action,id){
   const t=tsums.find(x=>x.id===id);if(!t)return;
   if(action==="plus"){
@@ -598,7 +633,9 @@ function handleCardAction(action,id){
   if(action==="detail"){touchRecent(t.id);openDetail(t);return}
   if(action==="edit"){touchRecent(t.id);openEdit(t);return}
   touchRecent(t.id);
-  save();renderAllKeepPosition();
+  save();
+  updateCardInPlace(t.id);
+  updateSummaryWithoutListRerender();
 }
 function summary(){
   const total=tsums.reduce((s,t)=>s+t.required,0);
@@ -815,7 +852,7 @@ function renderGoals(){
   $("#ticketStockValue").textContent=ticketStock;
   $("#goalList").innerHTML=goals.length?goals.map(g=>{
     const t=tsums.find(x=>x.name===g.tsumName);
-    if(!t)return `<article class="goal-card"><div class="goal-card-head"><strong>${esc(g.tsumName)}</strong><button data-edit-goal="${g.id}">編集</button></div><div class="goal-warning">登録ツムが見つかりません。</div></article>`;
+    if(!t)return `<article data-card-id="${t.id}" class="goal-card"><div class="goal-card-head"><strong>${esc(g.tsumName)}</strong><button data-edit-goal="${g.id}">編集</button></div><div class="goal-warning">登録ツムが見つかりません。</div></article>`;
     const target=goalTarget(g,t),need=Math.max(0,target-t.owned),p=Math.min(100,Math.round(t.owned/target*100));
     const deadline=g.deadline?new Date(g.deadline+"T00:00:00"):null;
     const days=deadline?Math.ceil((deadline-new Date())/86400000):null;
@@ -1612,7 +1649,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.30 Stable Input Position",
+    version:"8.4.31 Inline Card Update",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1782,7 +1819,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.30 Stable Input Position",
+    version:"8.4.31 Inline Card Update",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1890,7 +1927,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.30 Stable Input Position",
+      version:"8.4.31 Inline Card Update",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));

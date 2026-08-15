@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.30 Stable Input Position",
+  "name": "TsumManager 8.4.31 Inline Card Update",
   "short_name": "TsumManager",
-  "description": "所持数を順番に入力しても一覧画面の位置が動かないようにした版",
+  "description": "所持数入力時に一覧全体を再描画せず対象カードだけ更新する版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
