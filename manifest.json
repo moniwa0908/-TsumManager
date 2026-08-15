@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.31 Inline Card Update",
+  "name": "TsumManager 8.4.32 Inline Card Button Fix",
   "short_name": "TsumManager",
-  "description": "所持数入力時に一覧全体を再描画せず対象カードだけ更新する版",
+  "description": "MAX・＋・－ボタンを復旧し、一覧全体を再描画せずカードだけ更新する修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

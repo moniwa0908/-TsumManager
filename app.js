@@ -581,7 +581,15 @@ function updateCardInPlace(id){
   const t=tsums.find(x=>x.id===id);
   if(!t)return;
 
-  const card=document.querySelector(`[data-card-id="${CSS.escape(String(id))}"]`);
+  // CSS.escapeを使わず、同じIDを持つ操作ボタンからカードを逆引きする。
+  const buttons=document.querySelectorAll("[data-action][data-id]");
+  let card=null;
+  for(const b of buttons){
+    if(String(b.dataset.id)===String(id)){
+      card=b.closest("article");
+      if(card)break;
+    }
+  }
   if(!card)return;
 
   const countEl=card.querySelector(".counter b");
@@ -593,8 +601,15 @@ function updateCardInPlace(id){
   const progress=card.querySelector(".mini-progress i");
   if(progress)progress.style.width=pct(t)+"%";
 
-  const skillEl=card.querySelector(".skill-text, [data-skill-text]");
-  if(skillEl)skillEl.textContent=skillText(t);
+  // スキル表示は既存カード内のsmall要素を安全に更新
+  const smalls=card.querySelectorAll("small");
+  for(const el of smalls){
+    if(el.textContent.includes("スキル")||el.textContent.includes("%")){
+      const state=skillState(t);
+      el.textContent=`スキル ${state.level}/${state.maxLevel} ${state.percent}%`;
+      break;
+    }
+  }
 
   const favoriteButton=card.querySelector('[data-action="favorite"]');
   if(favoriteButton){
@@ -604,10 +619,8 @@ function updateCardInPlace(id){
 }
 
 function updateSummaryWithoutListRerender(){
-  try{renderHome();}catch(e){}
-  try{
-    if(activeView==="settings")renderSettings();
-  }catch(e){}
+  // 連続入力中は現在の一覧位置を最優先し、他画面は再描画しない。
+  // ホーム集計はホームへ戻った際にrenderAllで最新化される。
 }
 
 function handleCardAction(action,id){
@@ -1649,7 +1662,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.31 Inline Card Update",
+    version:"8.4.32 Inline Card Button Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1819,7 +1832,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.31 Inline Card Update",
+    version:"8.4.32 Inline Card Button Fix",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1927,7 +1940,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.31 Inline Card Update",
+      version:"8.4.32 Inline Card Button Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
