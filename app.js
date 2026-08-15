@@ -529,14 +529,15 @@ function cardHtml(t){
   </article>`;
 }
 function wireCards(scope){
-  // 各ボタンへ個別にイベントを付けず、一覧全体で1つだけ受け取る。
-  // 756体分のイベント登録をなくし、初回表示を軽くする。
-  if(scope.dataset.cardEventsWired==="1")return;
-  scope.dataset.cardEventsWired="1";
-  scope.addEventListener("click",event=>{
-    const button=event.target.closest("[data-action]");
-    if(!button||!scope.contains(button))return;
-    handleCardAction(button.dataset.action,button.dataset.id);
+  // Ver.8.4.33:
+  // イベント委譲をやめ、表示中の各ボタンへ直接クリック処理を付ける。
+  // MAX / ＋ / － が確実に反応することを優先する。
+  scope.querySelectorAll("[data-action][data-id]").forEach(button=>{
+    button.onclick=event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      handleCardAction(button.dataset.action,String(button.dataset.id));
+    };
   });
 }
 
@@ -578,18 +579,14 @@ function renderAllKeepPosition(){
 
 // Ver.8.4.31: 入力時は一覧全体を再描画せず、対象カードだけ更新する
 function updateCardInPlace(id){
-  const t=tsums.find(x=>x.id===id);
+  const sid=String(id);
+  const t=tsums.find(x=>String(x.id)===sid);
   if(!t)return;
 
-  // CSS.escapeを使わず、同じIDを持つ操作ボタンからカードを逆引きする。
-  const buttons=document.querySelectorAll("[data-action][data-id]");
   let card=null;
-  for(const b of buttons){
-    if(String(b.dataset.id)===String(id)){
-      card=b.closest("article");
-      if(card)break;
-    }
-  }
+  const button=Array.from(document.querySelectorAll("[data-action][data-id]"))
+    .find(b=>String(b.dataset.id)===sid);
+  if(button)card=button.closest("article");
   if(!card)return;
 
   const countEl=card.querySelector(".counter b");
@@ -601,20 +598,14 @@ function updateCardInPlace(id){
   const progress=card.querySelector(".mini-progress i");
   if(progress)progress.style.width=pct(t)+"%";
 
-  // スキル表示は既存カード内のsmall要素を安全に更新
-  const smalls=card.querySelectorAll("small");
-  for(const el of smalls){
-    if(el.textContent.includes("スキル")||el.textContent.includes("%")){
-      const state=skillState(t);
-      el.textContent=`スキル ${state.level}/${state.maxLevel} ${state.percent}%`;
-      break;
-    }
+  const meta=card.querySelector(".meta");
+  if(meta){
+    meta.innerHTML=`${esc(t.category)} ・ ${skillText(t)} ・ 残り${remain(t)}${t.skillGrowthVerified?"":`<span class="skill-source-note">推定配分</span>`}`;
   }
 
   const favoriteButton=card.querySelector('[data-action="favorite"]');
   if(favoriteButton){
-    favoriteButton.classList.toggle("active",!!t.favorite);
-    favoriteButton.setAttribute("aria-pressed",t.favorite?"true":"false");
+    favoriteButton.classList.toggle("on",!!t.favorite);
   }
 }
 
@@ -624,7 +615,7 @@ function updateSummaryWithoutListRerender(){
 }
 
 function handleCardAction(action,id){
-  const t=tsums.find(x=>x.id===id);if(!t)return;
+  const sid=String(id);const t=tsums.find(x=>String(x.id)===sid);if(!t)return;
   if(action==="plus"){
     const before=t.owned;t.owned=Math.min(t.required,t.owned+increment);
     if(t.owned!==before)setUndo(`${t.name}の所持数変更を取り消す`,[{id:t.id,owned:before}]);
@@ -1662,7 +1653,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.32 Inline Card Button Fix",
+    version:"8.4.33 Button Event Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1832,7 +1823,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.32 Inline Card Button Fix",
+    version:"8.4.33 Button Event Fix",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1940,7 +1931,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.32 Inline Card Button Fix",
+      version:"8.4.33 Button Event Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));

@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.32 Inline Card Button Fix",
+  "name": "TsumManager 8.4.33 Button Event Fix",
   "short_name": "TsumManager",
-  "description": "MAX・＋・－ボタンを復旧し、一覧全体を再描画せずカードだけ更新する修正版",
+  "description": "MAX・＋・－ボタンを各ボタンへの直接イベント登録方式で復旧した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
