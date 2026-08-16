@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.46 Gary Tiara Conan Fix",
+  "name": "TsumManager 8.4.48 Plus Medal Separate",
   "short_name": "TsumManager",
-  "description": "ゲイリー・ティアラミニー＋・江戸川コナン＋のスキル必要数修正版",
+  "description": "プラスツムをコイン集計から除外し、必要メダルとして別集計する版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

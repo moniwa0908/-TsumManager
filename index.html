@@ -142,6 +142,7 @@
           <div><b id="homeMaxed">0</b><span>スキルマ</span></div>
           <div><b id="homeRemaining">0</b><span>残り</span></div>
           <div><b id="homeCoins">0</b><span>必要コイン</span></div>
+          <div><b id="homeMedals">0</b><span>必要メダル</span></div>
         </div>
       </article>
 
@@ -291,6 +292,10 @@
       <article class="panel">
         <h2>必要コイン内訳</h2>
         <div id="coinStats"></div>
+      </article>
+      <article class="panel">
+        <h2>必要メダル内訳（プラスツム）</h2>
+        <div id="medalStats"></div>
       </article>
     </section>
 
@@ -619,7 +624,7 @@
       <div><span>現在数</span><b id="detailOwned">0</b></div>
       <div><span>必要数</span><b id="detailRequired">0</b></div>
       <div><span>残り</span><b id="detailRemaining">0</b></div>
-      <div><span>必要コイン</span><b id="detailCoins">0</b></div>
+      <div><span id="detailCostLabel">必要コイン</span><b id="detailCoins">0</b></div>
     </div>
     <div class="detail-direct">
       <label>所持数を直接入力

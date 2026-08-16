@@ -410,6 +410,8 @@ function touchRecent(id){
   saveRecent();
 }
 const remain=t=>Math.max(0,t.required-t.owned);
+const isPlusTsum=t=>/＋$/.test(String(t?.name||""));
+
 const pct=t=>Math.min(100,Math.round(t.owned/t.required*100));
 function growthProfile(t){
   const registeredGrowth=Array.isArray(t.skillGrowth)
@@ -642,12 +644,16 @@ function handleCardAction(action,id){
   updateSummaryWithoutListRerender();
 }
 function summary(){
-  const total=tsums.reduce((s,t)=>s+t.required,0);
-  const owned=tsums.reduce((s,t)=>s+Math.min(t.owned,t.required),0);
+  const total=tsums.reduce((s,t)=>s+(Number(t.required)||0),0);
+  const owned=tsums.reduce((s,t)=>s+Math.min(Number(t.owned)||0,Number(t.required)||0),0);
   const remaining=tsums.reduce((s,t)=>s+remain(t),0);
+  const coinRemaining=tsums.filter(t=>!isPlusTsum(t)).reduce((s,t)=>s+remain(t),0);
+  const medalRemaining=tsums.filter(isPlusTsum).reduce((s,t)=>s+remain(t),0);
   return{
-    total,owned,remaining,percent:total?Math.round(owned/total*100):0,
-    ownedTsums:tsums.filter(t=>t.owned>0).length,maxed:tsums.filter(t=>remain(t)===0).length
+    total,owned,remaining,coinRemaining,medalRemaining,
+    percent:total?Math.round(owned/total*100):0,
+    ownedTsums:tsums.filter(t=>t.owned>0).length,
+    maxed:tsums.filter(t=>remain(t)===0).length
   };
 }
 function renderHome(){
@@ -664,13 +670,14 @@ function renderHome(){
   $("#homeProgressBar").style.width=s.percent+"%";
   $("#homeOwned").textContent=s.ownedTsums;$("#homeMaxed").textContent=s.maxed;
   $("#homeRemaining").textContent=s.remaining.toLocaleString("ja-JP");
-  $("#homeCoins").textContent=(s.remaining*30000).toLocaleString("ja-JP");
+  $("#homeCoins").textContent=(s.coinRemaining*30000).toLocaleString("ja-JP");
+  $("#homeMedals").textContent=s.medalRemaining.toLocaleString("ja-JP");
   const near=tsums.filter(t=>remain(t)>0&&remain(t)<=5).sort((a,b)=>remain(a)-remain(b));
   const priorities=tsums.filter(t=>t.priority>0&&remain(t)>0).sort((a,b)=>a.priority-b.priority||remain(a)-remain(b));
   const recommendations=tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)||pct(b)-pct(a)).slice(0,5);
   $("#nearCount").textContent=near.length+"体";$("#unownedCount").textContent=tsums.filter(t=>t.owned===0).length+"体";
   const nearRanking=tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)||pct(b)-pct(a)).slice(0,5);
-  const coinRanking=tsums.filter(t=>remain(t)>0).sort((a,b)=>remain(b)-remain(a)||a.name.localeCompare(b.name,"ja")).slice(0,5);
+  const coinRanking=tsums.filter(t=>!isPlusTsum(t)&&remain(t)>0).sort((a,b)=>remain(b)-remain(a)||a.name.localeCompare(b.name,"ja")).slice(0,5);
   const assistantCandidates=buildAssistantSuggestions();
   $("#assistantSuggestions").innerHTML=assistantCandidates.map(x=>`<div class="assistant-card"><div class="avatar">${avatarHtml(x.t)}</div><div><strong>${esc(x.t.name)}</strong><small>${esc(x.reason)}</small></div><button data-assistant-id="${x.t.id}">詳細</button></div>`).join("")||`<div class="helper">提案できる育成候補がありません。</div>`;
   $("#assistantSuggestions").querySelectorAll("[data-assistant-id]").forEach(b=>b.onclick=()=>{const t=tsums.find(x=>x.id===b.dataset.assistantId);if(t)openDetail(t)});
@@ -925,7 +932,14 @@ function planStats(names){
     t?found.push(t):missing.push(name);
   }
   const remaining=found.reduce((s,t)=>s+remain(t),0);
-  return{found,missing,remaining,coins:remaining*30000,maxed:found.filter(t=>remain(t)===0).length};
+  const coinRemaining=found.filter(t=>!isPlusTsum(t)).reduce((s,t)=>s+remain(t),0);
+  const medals=found.filter(isPlusTsum).reduce((s,t)=>s+remain(t),0);
+  return{
+    found,missing,remaining,
+    coins:coinRemaining*30000,
+    medals,
+    maxed:found.filter(t=>remain(t)===0).length
+  };
 }
 function renderPlanner(){
   $("#planList").innerHTML=plans.length?plans.map(p=>{
@@ -936,6 +950,7 @@ function renderPlanner(){
         <div><b>${stats.found.length}</b><span>対象ツム</span></div>
         <div><b>${stats.remaining.toLocaleString("ja-JP")}</b><span>残り必要数</span></div>
         <div><b>${stats.coins.toLocaleString("ja-JP")}</b><span>必要コイン</span></div>
+        <div><b>${stats.medals.toLocaleString("ja-JP")}</b><span>必要メダル</span></div>
       </div>
       <div class="plan-progress"><i style="width:${stats.found.length?Math.round(stats.maxed/stats.found.length*100):0}%"></i></div>
       ${stats.missing.length?`<p class="helper">未登録：${stats.missing.map(esc).join("、")}</p>`:""}
@@ -1049,7 +1064,11 @@ function renderStats(){
     const p=rows.length?Math.round(owned/rows.length*100):0;
     return `<div class="stat-row"><div><span>${esc(tag)}（${owned}/${rows.length}体）</span><b>${p}%</b></div><div class="stat-progress"><i style="width:${p}%"></i></div></div>`;
   }).join(""):`<div class="helper">タグを登録すると、ここにコレクション率が表示されます。</div>`;
-  $("#coinStats").innerHTML=cats.map(c=>{const r=tsums.filter(t=>t.category===c).reduce((s,t)=>s+remain(t),0);return `<div class="stat-row"><div><span>${esc(c)}</span><b>${(r*30000).toLocaleString("ja-JP")}コイン</b></div></div>`}).join("");
+  $("#coinStats").innerHTML=cats.map(c=>{const r=tsums.filter(t=>t.category===c&&!isPlusTsum(t)).reduce((s,t)=>s+remain(t),0);return `<div class="stat-row"><div><span>${esc(c)}</span><b>${(r*30000).toLocaleString("ja-JP")}コイン</b></div></div>`}).join("");
+  const plusRows=tsums.filter(isPlusTsum);
+  const plusRemaining=plusRows.reduce((s,t)=>s+remain(t),0);
+  $("#medalStats").innerHTML=`<div class="stat-row"><div><span>プラスツム合計（${plusRows.length}体）</span><b>${plusRemaining.toLocaleString("ja-JP")}メダル</b></div></div>`+
+    plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${remain(t).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
 }
 function renderBox(){
   renderHistory();
@@ -1236,7 +1255,13 @@ function openDetail(t){
   $("#detailOwned").textContent=t.owned;
   $("#detailRequired").textContent=t.required;
   $("#detailRemaining").textContent=remain(t);
-  $("#detailCoins").textContent=(remain(t)*30000).toLocaleString("ja-JP");
+  if(isPlusTsum(t)){
+    $("#detailCostLabel").textContent="必要メダル";
+    $("#detailCoins").textContent=remain(t).toLocaleString("ja-JP");
+  }else{
+    $("#detailCostLabel").textContent="必要コイン";
+    $("#detailCoins").textContent=(remain(t)*30000).toLocaleString("ja-JP");
+  }
   $("#detailOwnedInput").value=t.owned;
   $("#detailMemo").textContent=t.memo||"メモはありません。";
   $("#detailFavoriteButton").textContent=t.favorite?"★ お気に入り済み":"☆ お気に入り";
@@ -1378,7 +1403,7 @@ $("#clearQuickPlanButton").onclick=()=>{$("#quickPlanText").value="";$("#quickPl
 $("#calcQuickPlanButton").onclick=()=>{
   const names=$("#quickPlanText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const s=planStats(names);
-  $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
+  $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン<br>必要メダル：${s.medals.toLocaleString("ja-JP")}枚${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
 };
 
 
