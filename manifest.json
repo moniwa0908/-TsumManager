@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.38 Daruma Minnie Fix",
+  "name": "TsumManager 8.4.39 4 Tsum Skill Fix",
   "short_name": "TsumManager",
-  "description": "だるまミニーのスキル必要数と最大スキルを修正した版",
+  "description": "お祭りドナルド・波乗りスティッチ・ジョン・パロットのスキル必要数修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
