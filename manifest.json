@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.43 Princess Minnie Fix",
+  "name": "TsumManager 8.4.45 Kaa Iago Ennui Fix",
   "short_name": "TsumManager",
-  "description": "プリンセスミニーのスキル必要数を修正した版",
+  "description": "カー・イアーゴ・イイナーのスキル必要数修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
