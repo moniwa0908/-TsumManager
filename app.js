@@ -908,7 +908,8 @@ function renderCollection(){
   rows.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
   const owned=tsums.filter(t=>t.owned>0).length;
   const maxed=tsums.filter(t=>remain(t)===0).length;
-  $("#collectionRate").textContent=Math.round(owned/tsums.length*100)+"%";
+  const collectionRate=owned===tsums.length?100:Math.min(99,Math.round(owned/tsums.length*100));
+  $("#collectionRate").textContent=collectionRate+"%";
   $("#collectionOwned").textContent=owned;
   $("#collectionMissing").textContent=tsums.length-owned;
   $("#collectionMaxed").textContent=maxed;

@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.49 Home Cost Layout Fix",
+  "name": "TsumManager 8.4.50 Collection Rate Fix",
   "short_name": "TsumManager",
-  "description": "ホームの必要コイン・必要メダル表示の文字かぶりを修正した版",
+  "description": "未所持がある場合の図鑑コレクション率100%表示を修正",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
