@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.33 Button Event Fix",
+  "name": "TsumManager 8.4.34 Game8 Skill Data Fix",
   "short_name": "TsumManager",
-  "description": "MAX・＋・－ボタンを各ボタンへの直接イベント登録方式で復旧した版",
+  "description": "Game8必要ツム数一覧と照合して確認できた誤データを修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

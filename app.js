@@ -529,7 +529,7 @@ function cardHtml(t){
   </article>`;
 }
 function wireCards(scope){
-  // Ver.8.4.33:
+  // Ver.8.4.34:
   // イベント委譲をやめ、表示中の各ボタンへ直接クリック処理を付ける。
   // MAX / ＋ / － が確実に反応することを優先する。
   scope.querySelectorAll("[data-action][data-id]").forEach(button=>{
@@ -1653,7 +1653,7 @@ $("#clearRecentButton").onclick=()=>{recent=[];saveRecent();renderHome();toast("
 $("#exportButton").onclick=()=>{
   const backup={
     app:"TsumManager",
-    version:"8.4.33 Button Event Fix",
+    version:"8.4.34 Game8 Skill Data Fix",
     backupType:"light",
     exportedAt:new Date().toISOString(),
     userData:buildStableUserStore(),
@@ -1823,7 +1823,7 @@ async function buildFullBackup(){
 
   return {
     app:"TsumManager",
-    version:"8.4.33 Button Event Fix",
+    version:"8.4.34 Game8 Skill Data Fix",
     schemaVersion:2,
     exportedAt:new Date().toISOString(),
     device:{
@@ -1931,7 +1931,7 @@ async function exportFullBackup(prefix="TsumManager_Backup",preferShare=true){
       time:new Date().toISOString(),
       size:result.size,
       images:tsums.filter(t=>t.image).length,
-      version:"8.4.33 Button Event Fix",
+      version:"8.4.34 Game8 Skill Data Fix",
       method:result.method
     };
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
