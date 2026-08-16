@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.34 Game8 Skill Data Fix",
+  "name": "TsumManager 8.4.38 Daruma Minnie Fix",
   "short_name": "TsumManager",
-  "description": "Game8必要ツム数一覧と照合して確認できた誤データを修正した版",
+  "description": "だるまミニーのスキル必要数と最大スキルを修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

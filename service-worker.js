@@ -1,4 +1,4 @@
-const CACHE="tsum-manager-8-4-34-game8-skill-data-fix-20260816-01";
+const CACHE="tsum-manager-8-4-38-daruma-minnie-fix-20260816-01";
 const ASSETS=["./","./index.html","./style.css","./app.js","./tsums-data.js","./manifest.json","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
