@@ -509,7 +509,7 @@ function cardHtml(t){
     <div>
       <div class="title-row">
         <button class="star ${t.favorite?"on":""}" data-action="favorite" data-id="${t.id}">★</button>
-        <strong role="button" data-action="detail" data-id="${t.id}">${esc(t.name)}</strong>
+        <strong role="button" data-action="detail" data-id="${t.id}"><span class="tsum-id-badge">ID ${esc(t.id)}</span>${esc(t.name)}</strong>
         ${tag?`<span class="priority-tag">${tag}</span>`:""}
         <button class="more" data-action="edit" data-id="${t.id}">•••</button>
       </div>
