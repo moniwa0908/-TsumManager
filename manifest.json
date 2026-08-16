@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.41 4 Tsum Skill Fix",
+  "name": "TsumManager 8.4.43 Princess Minnie Fix",
   "short_name": "TsumManager",
-  "description": "おでかけミニー・トナカイデール・だるまドナルド・探検家グーフィーの必要数修正版",
+  "description": "プリンセスミニーのスキル必要数を修正した版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
