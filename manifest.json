@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.40 Show IDs",
+  "name": "TsumManager 8.4.41 4 Tsum Skill Fix",
   "short_name": "TsumManager",
-  "description": "一覧の各ツムにIDを表示する版",
+  "description": "おでかけミニー・トナカイデール・だるまドナルド・探検家グーフィーの必要数修正版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
