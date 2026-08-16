@@ -671,7 +671,7 @@ function renderHome(){
   $("#homeOwned").textContent=s.ownedTsums;$("#homeMaxed").textContent=s.maxed;
   $("#homeRemaining").textContent=s.remaining.toLocaleString("ja-JP");
   $("#homeCoins").textContent=(s.coinRemaining*30000).toLocaleString("ja-JP");
-  $("#homeMedals").textContent=s.medalRemaining.toLocaleString("ja-JP");
+  $("#homeMedals").textContent=(s.medalRemaining*10000).toLocaleString("ja-JP");
   const near=tsums.filter(t=>remain(t)>0&&remain(t)<=5).sort((a,b)=>remain(a)-remain(b));
   const priorities=tsums.filter(t=>t.priority>0&&remain(t)>0).sort((a,b)=>a.priority-b.priority||remain(a)-remain(b));
   const recommendations=tsums.filter(t=>t.owned>0&&remain(t)>0).sort((a,b)=>remain(a)-remain(b)||pct(b)-pct(a)).slice(0,5);
@@ -938,7 +938,7 @@ function planStats(names){
   return{
     found,missing,remaining,
     coins:coinRemaining*30000,
-    medals,
+    medals:medals*10000,
     maxed:found.filter(t=>remain(t)===0).length
   };
 }
@@ -1068,8 +1068,8 @@ function renderStats(){
   $("#coinStats").innerHTML=cats.map(c=>{const r=tsums.filter(t=>t.category===c&&!isPlusTsum(t)).reduce((s,t)=>s+remain(t),0);return `<div class="stat-row"><div><span>${esc(c)}</span><b>${(r*30000).toLocaleString("ja-JP")}コイン</b></div></div>`}).join("");
   const plusRows=tsums.filter(isPlusTsum);
   const plusRemaining=plusRows.reduce((s,t)=>s+remain(t),0);
-  $("#medalStats").innerHTML=`<div class="stat-row"><div><span>プラスツム合計（${plusRows.length}体）</span><b>${plusRemaining.toLocaleString("ja-JP")}メダル</b></div></div>`+
-    plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${remain(t).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
+  $("#medalStats").innerHTML=`<div class="stat-row"><div><span>プラスツム合計（${plusRows.length}体）</span><b>${(plusRemaining*10000).toLocaleString("ja-JP")}メダル</b></div></div>`+
+    plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${(remain(t)*10000).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
 }
 function renderBox(){
   renderHistory();
@@ -1258,7 +1258,7 @@ function openDetail(t){
   $("#detailRemaining").textContent=remain(t);
   if(isPlusTsum(t)){
     $("#detailCostLabel").textContent="必要メダル";
-    $("#detailCoins").textContent=remain(t).toLocaleString("ja-JP");
+    $("#detailCoins").textContent=(remain(t)*10000).toLocaleString("ja-JP");
   }else{
     $("#detailCostLabel").textContent="必要コイン";
     $("#detailCoins").textContent=(remain(t)*30000).toLocaleString("ja-JP");
@@ -1404,7 +1404,7 @@ $("#clearQuickPlanButton").onclick=()=>{$("#quickPlanText").value="";$("#quickPl
 $("#calcQuickPlanButton").onclick=()=>{
   const names=$("#quickPlanText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const s=planStats(names);
-  $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン<br>必要メダル：${s.medals.toLocaleString("ja-JP")}枚${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
+  $("#quickPlanResult").innerHTML=`対象：${s.found.length}体<br>スキルマ済み：${s.maxed}体<br>残り必要数：${s.remaining.toLocaleString("ja-JP")}体<br>必要コイン：${s.coins.toLocaleString("ja-JP")}コイン<br>必要メダル：${s.medals.toLocaleString("ja-JP")}メダル${s.missing.length?`<br><span style="color:var(--danger)">未登録：${s.missing.map(esc).join("、")}</span>`:""}`;
 };
 
 

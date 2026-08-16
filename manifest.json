@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.50 Collection Rate Fix",
+  "name": "TsumManager 8.4.51 Plus Medal Cost Fix",
   "short_name": "TsumManager",
-  "description": "未所持がある場合の図鑑コレクション率100%表示を修正",
+  "description": "プラスツムを1回10,000メダルとして必要メダルを計算する版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

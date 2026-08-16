@@ -1,4 +1,4 @@
-const CACHE="tsum-manager-8-4-50-collection-rate-fix-20260816-01";
+const CACHE="tsum-manager-8-4-51-plus-medal-cost-fix-20260816-01";
 const ASSETS=["./","./index.html","./style.css","./app.js","./tsums-data.js","./manifest.json","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
