@@ -1072,7 +1072,7 @@ function renderStats(){
     plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${(remain(t)*10000).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
 }
 
-// Ver.8.4.52: 10連BOX結果スクリーンショット読み取り
+// Ver.8.4.53: 10連BOX結果スクリーンショット読み取り
 let tenPullSlots=[];
 
 function loadImageSource(src){
@@ -1095,30 +1095,122 @@ function readFileAsDataUrl(file){
 
 // 画像の中央部分から、背景色の影響を受けにくい簡易特徴量を作る。
 // 16x16グレースケールを平均0・分散1へ正規化して比較する。
-function imageDescriptorFromCanvas(sourceCanvas){
-  const size=16;
-  const c=document.createElement("canvas");
-  c.width=size;c.height=size;
-  const ctx=c.getContext("2d",{willReadFrequently:true});
-  ctx.drawImage(sourceCanvas,0,0,size,size);
-  const data=ctx.getImageData(0,0,size,size).data;
-  const values=[];
-  for(let i=0;i<data.length;i+=4){
-    values.push((data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255);
-  }
-  const mean=values.reduce((a,b)=>a+b,0)/values.length;
-  const variance=values.reduce((s,v)=>s+(v-mean)*(v-mean),0)/values.length;
+
+function normalizeVector(values){
+  const mean=values.reduce((a,b)=>a+b,0)/(values.length||1);
+  const variance=values.reduce((s,v)=>s+(v-mean)*(v-mean),0)/(values.length||1);
   const sd=Math.sqrt(variance)||1;
   return values.map(v=>(v-mean)/sd);
 }
 
-function descriptorSimilarity(a,b){
+function cosineSimilarity(a,b){
   if(!a||!b||a.length!==b.length)return -1;
   let dot=0,aa=0,bb=0;
   for(let i=0;i<a.length;i++){
     dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i];
   }
   return dot/(Math.sqrt(aa*bb)||1);
+}
+
+function imageDescriptorFromCanvas(sourceCanvas){
+  // Ver.8.4.53:
+  // グレースケールだけでは似た輪郭のツムを誤判定しやすかったため、
+  // 「色」「中心形状」「エッジ」を組み合わせる。
+  const size=48;
+  const c=document.createElement("canvas");
+  c.width=size;c.height=size;
+  const ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(sourceCanvas,0,0,size,size);
+  const pixels=ctx.getImageData(0,0,size,size).data;
+
+  const rgbLow=[];
+  const gray=[];
+  const colorHist=new Array(8*8*4).fill(0); // hue-like RG bins + brightness
+  const edgeHist=new Array(4*4*8).fill(0);
+
+  const grayAt=(x,y)=>{
+    const i=(y*size+x)*4;
+    return (pixels[i]*0.299+pixels[i+1]*0.587+pixels[i+2]*0.114)/255;
+  };
+
+  // 中心部を強く評価。背景・枠の影響を下げる。
+  for(let by=0;by<12;by++){
+    for(let bx=0;bx<12;bx++){
+      let rs=0,gs=0,bs=0,ws=0;
+      for(let oy=0;oy<4;oy++){
+        for(let ox=0;ox<4;ox++){
+          const x=bx*4+ox,y=by*4+oy;
+          const dx=(x+0.5-size/2)/(size/2),dy=(y+0.5-size/2)/(size/2);
+          const radius=Math.sqrt(dx*dx+dy*dy);
+          const w=radius<0.82?1:(radius<1?0.35:0.06);
+          const i=(y*size+x)*4;
+          rs+=pixels[i]/255*w;gs+=pixels[i+1]/255*w;bs+=pixels[i+2]/255*w;ws+=w;
+        }
+      }
+      rgbLow.push(rs/ws,gs/ws,bs/ws);
+    }
+  }
+
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const i=(y*size+x)*4;
+      const r=pixels[i]/255,g=pixels[i+1]/255,b=pixels[i+2]/255;
+      const dx=(x+0.5-size/2)/(size/2),dy=(y+0.5-size/2)/(size/2);
+      const radius=Math.sqrt(dx*dx+dy*dy);
+      if(radius>0.96)continue;
+      const weight=radius<0.75?1:0.35;
+      const max=Math.max(r,g,b),min=Math.min(r,g,b);
+      const bright=(r+g+b)/3;
+      const rb=Math.max(0,Math.min(7,Math.floor(r*8)));
+      const gb=Math.max(0,Math.min(7,Math.floor(g*8)));
+      const vb=Math.max(0,Math.min(3,Math.floor(bright*4)));
+      colorHist[(rb*8+gb)*4+vb]+=weight*(0.45+(max-min));
+      gray.push(grayAt(x,y));
+    }
+  }
+
+  // HOG風の簡易エッジ特徴
+  for(let y=1;y<size-1;y++){
+    for(let x=1;x<size-1;x++){
+      const dxn=(x+0.5-size/2)/(size/2),dyn=(y+0.5-size/2)/(size/2);
+      if(Math.sqrt(dxn*dxn+dyn*dyn)>0.9)continue;
+      const gx=grayAt(x+1,y)-grayAt(x-1,y);
+      const gy=grayAt(x,y+1)-grayAt(x,y-1);
+      const mag=Math.sqrt(gx*gx+gy*gy);
+      if(mag<0.025)continue;
+      let angle=Math.atan2(gy,gx);
+      if(angle<0)angle+=Math.PI*2;
+      const ob=Math.floor(angle/(Math.PI*2)*8)%8;
+      const cx=Math.min(3,Math.floor(x/12));
+      const cy=Math.min(3,Math.floor(y/12));
+      edgeHist[(cy*4+cx)*8+ob]+=mag;
+    }
+  }
+
+  const histSum=colorHist.reduce((a,b)=>a+b,0)||1;
+  const edgeSum=edgeHist.reduce((a,b)=>a+b,0)||1;
+  return {
+    rgb: normalizeVector(rgbLow),
+    color: colorHist.map(v=>v/histSum),
+    edge: edgeHist.map(v=>v/edgeSum)
+  };
+}
+
+function histogramIntersection(a,b){
+  if(!a||!b||a.length!==b.length)return 0;
+  let s=0;
+  for(let i=0;i<a.length;i++)s+=Math.min(a[i],b[i]);
+  return s;
+}
+
+function descriptorSimilarity(a,b){
+  if(!a||!b)return -1;
+  const rgb=cosineSimilarity(a.rgb,b.rgb);          // -1..1
+  const color=histogramIntersection(a.color,b.color); // 0..1
+  const edge=histogramIntersection(a.edge,b.edge);    // 0..1
+  // 0..1に統一して合成。色を最重視。
+  const rgb01=(rgb+1)/2;
+  return Math.max(0,Math.min(1,rgb01*0.48+color*0.37+edge*0.15));
 }
 
 async function descriptorFromDataUrl(src){
@@ -1163,11 +1255,12 @@ function cropTenPullSlots(img){
     [xs[0],ys[2]],[xs[1],ys[2]]
   ];
   const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
-  const side=iw*0.145;
+  // 顔そのものへ寄せる。旧版は周囲の青背景まで含みすぎて誤判定していた。
+  const side=iw*0.122;
   return positions.map(([rx,ry],i)=>{
     const c=document.createElement("canvas");
     c.width=120;c.height=120;
-    const sx=rx*iw-side/2,sy=ry*ih-side/2;
+    const sx=rx*iw-side/2,sy=ry*ih-side*0.56;
     c.getContext("2d").drawImage(img,sx,sy,side,side,0,0,120,120);
     return {index:i,canvas:c,preview:c.toDataURL("image/jpeg",0.88),descriptor:imageDescriptorFromCanvas(c)};
   });
@@ -1180,8 +1273,10 @@ function renderTenPullSlots(){
   host.innerHTML=tenPullSlots.map((slot,i)=>{
     const selected=slot.selectedId||"";
     const candidateText=slot.candidates?.length
-      ?`候補：${slot.candidates.slice(0,3).map(x=>`${esc(x.t.name)} ${Math.round((x.score+1)/2*100)}%`).join(" / ")}`
+      ?`候補：${slot.candidates.slice(0,3).map(x=>`${esc(x.t.name)} ${Math.round(x.score*100)}%`).join(" / ")}`
       :"候補なし";
+    const confident=!!slot.selectedId;
+    const candidateButtons=(slot.candidates||[]).slice(0,3).map(x=>`<button type="button" class="ten-pull-candidate ${String(x.t.id)===String(slot.selectedId)?"selected":""}" data-ten-candidate-slot="${i}" data-ten-candidate-id="${esc(x.t.id)}">${x.t.image?`<img src="${esc(x.t.image)}" alt="">`:""}<span>${esc(x.t.name)}</span><b>${Math.round(x.score*100)}%</b></button>`).join("");
     return `<div class="ten-pull-slot">
       <div class="ten-pull-slot-number">${i+1}</div>
       <img src="${slot.preview}" alt="${i+1}枠目">
@@ -1189,13 +1284,22 @@ function renderTenPullSlots(){
         <option value="">選択してください</option>
         ${allOptions}
       </select>
+      <div class="ten-pull-confidence ${confident?"ok":"warn"}">${confident?"自動選択":"要確認"}</div>
       <small>${candidateText}</small>
+      <div class="ten-pull-candidates">${candidateButtons}</div>
     </div>`;
   }).join("");
   host.querySelectorAll("[data-ten-pull-slot]").forEach(select=>{
     const i=Number(select.dataset.tenPullSlot);
     select.value=tenPullSlots[i].selectedId||"";
     select.onchange=()=>{tenPullSlots[i].selectedId=select.value;};
+  });
+  host.querySelectorAll("[data-ten-candidate-id]").forEach(button=>{
+    button.onclick=()=>{
+      const i=Number(button.dataset.tenCandidateSlot);
+      tenPullSlots[i].selectedId=button.dataset.tenCandidateId;
+      renderTenPullSlots();
+    };
   });
 }
 
@@ -1229,8 +1333,12 @@ async function analyzeTenPullImage(file){
     const ranked=candidates.map(c=>({...c,score:descriptorSimilarity(slot.descriptor,c.descriptor)}))
       .sort((a,b)=>b.score-a.score)
       .slice(0,5);
-    const best=ranked[0];
-    return {...slot,candidates:ranked,selectedId:best?.t.id||""};
+    const best=ranked[0],second=ranked[1];
+    const margin=best&&second?best.score-second.score:0;
+    // 間違った候補を勝手に選ぶ方が危険なので、
+    // 十分な一致度と2位との差がある場合だけ自動選択。
+    const confident=!!best && best.score>=0.78 && margin>=0.035;
+    return {...slot,candidates:ranked,selectedId:confident?best.t.id:"",confidence:best?.score||0,margin};
   });
 
   renderTenPullSlots();
@@ -1238,7 +1346,7 @@ async function analyzeTenPullImage(file){
   $("#tenPullActions").hidden=false;
 
   const imageCount=candidates.length;
-  status.innerHTML=`10枠を読み取りました。<b>${imageCount}体分の登録画像</b>と照合しています。<br>自動候補は必ず確認し、違う枠だけ選び直してから反映してください。`;
+  status.innerHTML=`10枠を読み取りました。<b>${imageCount}体分の登録画像</b>と照合しています。<br>精度優先モードです。十分に自信がある枠だけ自動選択し、あいまいな枠は「要確認」のままにします。候補画像をタップするかプルダウンで選んでください。`;
 }
 
 function clearTenPullReader(){
