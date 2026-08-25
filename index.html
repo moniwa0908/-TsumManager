@@ -237,6 +237,19 @@
     </section>
 
     <section id="boxView" class="view" hidden>
+      <article class="panel ten-pull-panel">
+        <div class="section-title"><h2>📷 10連結果読み取り</h2></div>
+        <p class="helper">「BOX購入結果」のスクリーンショットを選ぶと、10枠を自動で切り出して登録済み画像と照合します。認識結果を確認・修正してから一括反映できます。</p>
+        <input id="tenPullImageInput" type="file" accept="image/*" hidden>
+        <button id="selectTenPullImageButton" class="primary-button">10連スクショを選択</button>
+        <div id="tenPullStatus" class="result-box">スクリーンショットを選択してください。</div>
+        <div id="tenPullPreview" class="ten-pull-preview" hidden></div>
+        <div id="tenPullActions" class="button-row" hidden>
+          <button id="clearTenPullButton" class="secondary-button">やり直す</button>
+          <button id="applyTenPullButton" class="primary-button">この10体を一括反映</button>
+        </div>
+      </article>
+
       <article class="panel">
         <h2>BOX結果をまとめて入力</h2>
         <p class="helper">1行に1体入力します。同じツムを3回引いた場合は3行入力してください。</p>

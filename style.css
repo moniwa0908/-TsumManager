@@ -711,3 +711,47 @@ dialog{
     white-space:nowrap;
   }
 }
+
+/* Ver.8.4.52: 10連結果画像読み取り */
+.ten-pull-panel .primary-button{width:100%}
+.ten-pull-preview{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  margin-top:12px;
+}
+.ten-pull-slot{
+  position:relative;
+  display:grid;
+  grid-template-columns:54px minmax(0,1fr);
+  gap:7px;
+  align-items:center;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--bg);
+  min-width:0;
+}
+.ten-pull-slot img{
+  width:54px;height:54px;object-fit:cover;border-radius:12px;
+}
+.ten-pull-slot select{
+  min-width:0;width:100%;font-size:12px;padding:7px 5px;
+}
+.ten-pull-slot small{
+  grid-column:1/3;
+  font-size:9px;line-height:1.4;color:var(--muted);
+}
+.ten-pull-slot-number{
+  position:absolute;left:3px;top:3px;
+  width:19px;height:19px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:9px;font-weight:800;
+  background:var(--accent);color:white;
+}
+@media(min-width:700px){
+  .ten-pull-preview{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ten-pull-slot{grid-template-columns:1fr}
+  .ten-pull-slot img{width:72px;height:72px;justify-self:center}
+  .ten-pull-slot small{grid-column:auto}
+}

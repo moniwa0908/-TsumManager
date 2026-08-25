@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.51 Plus Medal Cost Fix",
+  "name": "TsumManager 8.4.52 Ten Pull Image Reader",
   "short_name": "TsumManager",
-  "description": "プラスツムを1回10,000メダルとして必要メダルを計算する版",
+  "description": "10連BOX購入結果スクリーンショットを登録済みツム画像と照合し一括反映する版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

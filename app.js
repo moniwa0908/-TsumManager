@@ -1071,6 +1071,216 @@ function renderStats(){
   $("#medalStats").innerHTML=`<div class="stat-row"><div><span>プラスツム合計（${plusRows.length}体）</span><b>${(plusRemaining*10000).toLocaleString("ja-JP")}メダル</b></div></div>`+
     plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${(remain(t)*10000).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
 }
+
+// Ver.8.4.52: 10連BOX結果スクリーンショット読み取り
+let tenPullSlots=[];
+
+function loadImageSource(src){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("画像を開けませんでした"));
+    img.src=src;
+  });
+}
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(new Error("画像を読み込めませんでした"));
+    reader.readAsDataURL(file);
+  });
+}
+
+// 画像の中央部分から、背景色の影響を受けにくい簡易特徴量を作る。
+// 16x16グレースケールを平均0・分散1へ正規化して比較する。
+function imageDescriptorFromCanvas(sourceCanvas){
+  const size=16;
+  const c=document.createElement("canvas");
+  c.width=size;c.height=size;
+  const ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(sourceCanvas,0,0,size,size);
+  const data=ctx.getImageData(0,0,size,size).data;
+  const values=[];
+  for(let i=0;i<data.length;i+=4){
+    values.push((data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255);
+  }
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const variance=values.reduce((s,v)=>s+(v-mean)*(v-mean),0)/values.length;
+  const sd=Math.sqrt(variance)||1;
+  return values.map(v=>(v-mean)/sd);
+}
+
+function descriptorSimilarity(a,b){
+  if(!a||!b||a.length!==b.length)return -1;
+  let dot=0,aa=0,bb=0;
+  for(let i=0;i<a.length;i++){
+    dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i];
+  }
+  return dot/(Math.sqrt(aa*bb)||1);
+}
+
+async function descriptorFromDataUrl(src){
+  const img=await loadImageSource(src);
+  const c=document.createElement("canvas");
+  const size=Math.min(img.naturalWidth||img.width,img.naturalHeight||img.height);
+  const sx=((img.naturalWidth||img.width)-size)/2;
+  const sy=((img.naturalHeight||img.height)-size)/2;
+  c.width=96;c.height=96;
+  c.getContext("2d").drawImage(img,sx,sy,size,size,0,0,96,96);
+  return imageDescriptorFromCanvas(c);
+}
+
+async function buildRegisteredImageDescriptors(){
+  const rows=await getAllStoredImages();
+  const currentByName=new Map(tsums.map(t=>[t.name,t]));
+  const candidates=[];
+  for(const row of rows){
+    const t=currentByName.get(row.name);
+    if(!t||!row.image)continue;
+    try{
+      candidates.push({t,descriptor:await descriptorFromDataUrl(row.image)});
+    }catch(e){}
+  }
+  // IndexedDBにないが現在データに画像があるものも補完
+  const existing=new Set(candidates.map(x=>x.t.id));
+  for(const t of tsums){
+    if(existing.has(t.id)||!t.image)continue;
+    try{candidates.push({t,descriptor:await descriptorFromDataUrl(t.image)});}catch(e){}
+  }
+  return candidates;
+}
+
+function cropTenPullSlots(img){
+  // 2026年版「BOX購入結果」画面の4+4+2配置。
+  // 座標は画像サイズ比率なので、端末解像度が変わっても追従する。
+  const xs=[0.201,0.402,0.603,0.804];
+  const ys=[0.373,0.501,0.631];
+  const positions=[
+    [xs[0],ys[0]],[xs[1],ys[0]],[xs[2],ys[0]],[xs[3],ys[0]],
+    [xs[0],ys[1]],[xs[1],ys[1]],[xs[2],ys[1]],[xs[3],ys[1]],
+    [xs[0],ys[2]],[xs[1],ys[2]]
+  ];
+  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const side=iw*0.145;
+  return positions.map(([rx,ry],i)=>{
+    const c=document.createElement("canvas");
+    c.width=120;c.height=120;
+    const sx=rx*iw-side/2,sy=ry*ih-side/2;
+    c.getContext("2d").drawImage(img,sx,sy,side,side,0,0,120,120);
+    return {index:i,canvas:c,preview:c.toDataURL("image/jpeg",0.88),descriptor:imageDescriptorFromCanvas(c)};
+  });
+}
+
+function renderTenPullSlots(){
+  const host=$("#tenPullPreview");
+  if(!host)return;
+  const allOptions=tsums.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");
+  host.innerHTML=tenPullSlots.map((slot,i)=>{
+    const selected=slot.selectedId||"";
+    const candidateText=slot.candidates?.length
+      ?`候補：${slot.candidates.slice(0,3).map(x=>`${esc(x.t.name)} ${Math.round((x.score+1)/2*100)}%`).join(" / ")}`
+      :"候補なし";
+    return `<div class="ten-pull-slot">
+      <div class="ten-pull-slot-number">${i+1}</div>
+      <img src="${slot.preview}" alt="${i+1}枠目">
+      <select data-ten-pull-slot="${i}">
+        <option value="">選択してください</option>
+        ${allOptions}
+      </select>
+      <small>${candidateText}</small>
+    </div>`;
+  }).join("");
+  host.querySelectorAll("[data-ten-pull-slot]").forEach(select=>{
+    const i=Number(select.dataset.tenPullSlot);
+    select.value=tenPullSlots[i].selectedId||"";
+    select.onchange=()=>{tenPullSlots[i].selectedId=select.value;};
+  });
+}
+
+async function analyzeTenPullImage(file){
+  const status=$("#tenPullStatus");
+  status.textContent="画像を読み込んでいます…";
+  const src=await readFileAsDataUrl(file);
+  const img=await loadImageSource(src);
+
+  // 縦長の結果画面を前提。異常な比率なら警告するが処理は続行。
+  const ratio=(img.naturalHeight||img.height)/(img.naturalWidth||img.width);
+  if(ratio<1.7){
+    status.textContent="縦長の「BOX購入結果」スクショではない可能性があります。読み取りを続けます…";
+  }else{
+    status.textContent="10枠を切り出しています…";
+  }
+
+  const slots=cropTenPullSlots(img);
+  status.textContent="登録済みツム画像と照合しています…";
+  const candidates=await buildRegisteredImageDescriptors();
+  if(!candidates.length){
+    tenPullSlots=slots.map(s=>({...s,candidates:[],selectedId:""}));
+    renderTenPullSlots();
+    $("#tenPullPreview").hidden=false;
+    $("#tenPullActions").hidden=false;
+    status.textContent="登録済み画像が見つからないため自動判定できません。各枠を手動で選択してください。";
+    return;
+  }
+
+  tenPullSlots=slots.map(slot=>{
+    const ranked=candidates.map(c=>({...c,score:descriptorSimilarity(slot.descriptor,c.descriptor)}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,5);
+    const best=ranked[0];
+    return {...slot,candidates:ranked,selectedId:best?.t.id||""};
+  });
+
+  renderTenPullSlots();
+  $("#tenPullPreview").hidden=false;
+  $("#tenPullActions").hidden=false;
+
+  const imageCount=candidates.length;
+  status.innerHTML=`10枠を読み取りました。<b>${imageCount}体分の登録画像</b>と照合しています。<br>自動候補は必ず確認し、違う枠だけ選び直してから反映してください。`;
+}
+
+function clearTenPullReader(){
+  tenPullSlots=[];
+  $("#tenPullImageInput").value="";
+  $("#tenPullPreview").innerHTML="";
+  $("#tenPullPreview").hidden=true;
+  $("#tenPullActions").hidden=true;
+  $("#tenPullStatus").textContent="スクリーンショットを選択してください。";
+}
+
+function applyTenPullResults(){
+  if(tenPullSlots.length!==10){alert("10連結果を先に読み取ってください");return}
+  const ids=tenPullSlots.map(x=>x.selectedId);
+  if(ids.some(x=>!x)){alert("未選択の枠があります。10枠すべて確認してください。");return}
+  const counts=new Map();
+  for(const id of ids)counts.set(id,(counts.get(id)||0)+1);
+
+  const changes=[],details=[];
+  let total=0;
+  for(const [id,count] of counts){
+    const t=tsums.find(x=>x.id===id);
+    if(!t)continue;
+    const before=t.owned;
+    t.owned=Math.min(t.required,t.owned+count);
+    const added=t.owned-before;
+    if(added>0){
+      total+=added;
+      changes.push({id:t.id,owned:before});
+      details.push(`${t.name}＋${added}`);
+      touchRecent(t.id);
+    }
+  }
+  if(!changes.length){alert("反映できるツムがありませんでした");return}
+  save();
+  addHistory("10連画像",details.join("、"),changes);
+  setUndo("直前の10連画像入力を取り消す",changes);
+  renderAll();
+  clearTenPullReader();
+  toast(`${total}体分を一括反映しました`);
+}
+
 function renderBox(){
   renderHistory();
   if($("#ticketSearch").value)renderTicketCandidates();
@@ -1338,6 +1548,20 @@ $("#galleryMode").onclick=()=>{
 $("#refreshRecommendButton").onclick=()=>{renderHome();toast("おすすめ候補を再計算しました")};
 
 $("#layoutMode").onclick=()=>{compact=!compact;gallery=false;localStorage.setItem("tm-gallery","0");localStorage.setItem("tm-compact",compact?"1":"0");const compactToggleEl=$("#compactToggle");if(compactToggleEl)compactToggleEl.checked=compact;renderList()};
+
+$("#selectTenPullImageButton").onclick=()=>$("#tenPullImageInput").click();
+$("#tenPullImageInput").onchange=async e=>{
+  const file=e.target.files?.[0];
+  if(!file)return;
+  try{await analyzeTenPullImage(file)}
+  catch(err){
+    console.error(err);
+    $("#tenPullStatus").textContent="読み取りに失敗しました："+err.message;
+  }
+};
+$("#clearTenPullButton").onclick=clearTenPullReader;
+$("#applyTenPullButton").onclick=applyTenPullResults;
+
 $("#clearBoxButton").onclick=()=>{$("#boxText").value="";$("#boxPreview").textContent="入力内容がここに表示されます。"};
 $("#previewBoxButton").onclick=previewBox;
 $("#applyBoxButton").onclick=()=>{
