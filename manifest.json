@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.53 Ten Pull Accuracy Fix",
+  "name": "TsumManager 8.4.54 Ten Pull One Row Layout",
   "short_name": "TsumManager",
-  "description": "10連画像認識を色・形状・エッジの複合判定へ変更し、低信頼候補を自動選択しない版",
+  "description": "10連結果の各枠をスマホで1行ずつ大きく表示する版",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -769,3 +769,79 @@ dialog{
 @media(min-width:700px){
   .ten-pull-confidence,.ten-pull-candidates{grid-column:auto}
 }
+
+/* Ver.8.4.54: 10連結果を1枠1行で大きく表示 */
+.ten-pull-preview{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.ten-pull-slot{
+  display:grid;
+  grid-template-columns:82px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--bg);
+  min-width:0;
+}
+.ten-pull-slot img{
+  width:82px;
+  height:82px;
+  object-fit:cover;
+  border-radius:14px;
+}
+.ten-pull-slot select{
+  min-width:0;
+  width:100%;
+  font-size:15px;
+  padding:10px 8px;
+}
+.ten-pull-slot small{
+  grid-column:1/3;
+  font-size:11px;
+  line-height:1.5;
+  color:var(--muted);
+}
+.ten-pull-confidence{
+  grid-column:1/3;
+  font-size:11px;
+  padding:5px 8px;
+}
+.ten-pull-candidates{
+  grid-column:1/3;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+.ten-pull-candidate{
+  grid-template-columns:36px minmax(0,1fr);
+  gap:6px;
+  padding:6px;
+}
+.ten-pull-candidate img{
+  width:36px;
+  height:36px;
+  border-radius:9px;
+}
+.ten-pull-candidate span{
+  font-size:10px;
+}
+.ten-pull-candidate b{
+  font-size:9px;
+}
+.ten-pull-slot-number{
+  width:22px;
+  height:22px;
+  font-size:10px;
+}
+
+/* PCや横長画面でも最大2列までにして見やすさ優先 */
+@media(min-width:900px){
+  .ten-pull-preview{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
