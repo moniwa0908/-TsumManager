@@ -1,4 +1,4 @@
-const CACHE="tsum-manager-8-4-55-outdoor-mickey-fix";
+const CACHE="tsum-manager-8-4-56-september-new-tsums";
 const ASSETS=["./","./index.html","./style.css","./app.js","./tsums-data.js","./manifest.json","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
