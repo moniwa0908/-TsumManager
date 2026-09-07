@@ -1072,7 +1072,7 @@ function renderStats(){
     plusRows.filter(t=>remain(t)>0).map(t=>`<div class="stat-row"><div><span>${esc(t.name)}</span><b>${(remain(t)*10000).toLocaleString("ja-JP")}メダル</b></div></div>`).join("");
 }
 
-// Ver.8.4.56: 10連BOX結果スクリーンショット読み取り
+// Ver.8.4.57: 10連BOX結果スクリーンショット読み取り
 let tenPullSlots=[];
 
 function loadImageSource(src){
@@ -1113,7 +1113,7 @@ function cosineSimilarity(a,b){
 }
 
 function imageDescriptorFromCanvas(sourceCanvas){
-  // Ver.8.4.56:
+  // Ver.8.4.57:
   // グレースケールだけでは似た輪郭のツムを誤判定しやすかったため、
   // 「色」「中心形状」「エッジ」を組み合わせる。
   const size=48;
