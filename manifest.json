@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.57 September 7 New Tsums",
+  "name": "TsumManager 8.4.59 Marie Plus Skill Fix",
   "short_name": "TsumManager",
-  "description": "10連結果の各枠をスマホで1行ずつ大きく表示する版",
+  "description": "マリー＋のスキル必要数を公式攻略情報に基づき確定",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
