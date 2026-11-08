@@ -1,7 +1,7 @@
 {
-  "name": "TsumManager 8.4.62",
+  "name": "TsumManager 8.4.63 November New Tsums",
   "short_name": "TsumManager",
-  "description": "ダンボ＋、ロルカナウッディ(変身)、ロルカナクルエラ追加",
+  "description": "ロルカナベル(変身)とロルカナドナルドを追加",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
